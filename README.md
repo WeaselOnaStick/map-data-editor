@@ -1,2 +1,6 @@
 # map-data-editor
-Edit SHAR map data like road networks, fences, paths and locators
+Import/Export/Edit/Create The Simpsons: Hit & Run map data including:
+* Road Networks 
+* Fences
+* Pedestrian Paths
+* Locators (Experimental)

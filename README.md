@@ -12,4 +12,11 @@ For latest:
  * Choose a ZIP you just downloaded
  * Unfold add-on settings and toggle modules that you want to work with
 
-For stable
+For stable:
+ * Download from latest zip from https://github.com/WeaselOnaStick/map-data-editor/releases
+ * In Blender: `Edit` > `Preferences` > `Add-ons` > `Install...`
+ * Choose a ZIP you just downloaded
+ * Unfold add-on settings and toggle modules that you want to work with
+
+## How To Use:
+https://github.com/WeaselOnaStick/map-data-editor/wiki

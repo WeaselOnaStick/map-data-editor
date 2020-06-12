@@ -23,3 +23,6 @@ For stable:
 
 ## How To Use:
 https://github.com/WeaselOnaStick/map-data-editor/wiki
+
+## Submit Issues here:
+https://github.com/WeaselOnaStick/map-data-editor/issues

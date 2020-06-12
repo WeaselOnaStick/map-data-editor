@@ -10,13 +10,14 @@ def path_create():
 
 def import_paths(filepath):
     bpy.ops.object.select_all(action='DESELECT')
-    active_path = None
     root = terra_read(filepath)
     if 'Paths' not in bpy.context.scene.collection.children:
         paths_collection = bpy.data.collections.new('Paths')
         bpy.context.scene.collection.children.link(paths_collection)
     else:
         paths_collection = bpy.data.collections['Paths']
+    if not find_chunks(root, PAT):
+        return "No path chunks found in the file"
     for path in find_chunks(root, PAT):
         locs = []
         for vert in path.findall('Value/*'):
@@ -35,10 +36,10 @@ def import_paths(filepath):
         path_object = bpy.data.objects.new('Path', path_mesh)
         paths_collection.objects.link(path_object)
         path_object.data.update()
-        path_objs.append(path_object)
-        if not active_path:
-            active_path = path_object
-    active_path.select_set(True)
+        path_object.select_set(True)
+    bpy.context.view_layer.objects.active = path_object
+    # TODO fix path object's visibility somehow. Maybe switch these objects entirely to vector curves
+    return 'OK'
 
 
 def export_paths(filepath, objs):

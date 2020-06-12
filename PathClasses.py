@@ -15,9 +15,12 @@ class FileImportPaths(bpy.types.Operator, ImportHelper):
                                           maxlen=255)
 
     def execute(self, context):
-        import_paths(self.filepath)
-        return {
-            'FINISHED'}
+        result_message = import_paths(self.filepath)
+        if result_message != 'OK':
+            self.report(type={'ERROR'}, message=result_message)
+            return {'FINISHED'}
+        else:
+            return {'FINISHED'}
 
 
 class FileExportPaths(bpy.types.Operator, ExportHelper):

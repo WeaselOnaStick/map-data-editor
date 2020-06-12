@@ -26,4 +26,5 @@ for icon in [path.splitext(icon)[0] for icon in os.listdir(icons_dir) if path.sp
     pcoll.load(icon, path.join(icons_dir, icon+".png"), 'IMAGE')
 # Access icons by filename and icon id: pcoll['{filename}'].icon_id
 
+
 reminder = 'remind weasel to add text here'

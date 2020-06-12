@@ -106,7 +106,6 @@ def unregister():
     del bpy.types.Collection.road_node_prop
     del bpy.types.Object.inter_road_beh
     del bpy.types.Object.locator_prop
-    # bpy.utils.previews.remove(pcoll=utils_bpy.pcoll)
 
 
 if __name__ == '__main__':

@@ -106,7 +106,7 @@ class FileExportRoadsAndIntersects(bpy.types.Operator, ExportHelper):
 
 
 class IntersectCreate(bpy.types.Operator):
-    """IntersectCreate"""
+    """Create a road intersection"""
     bl_idname = 'object.intersect_create'
     bl_label = 'Create an intersection'
     bl_options = {'REGISTER', 'UNDO'}
@@ -129,7 +129,7 @@ class IntersectCreate(bpy.types.Operator):
 
 
 class IntersectDelete(bpy.types.Operator):
-    """IntersectDelete"""
+    """Delete current intersection"""
     bl_idname = 'object.intersect_delete'
     bl_label = 'Delete this intersection'
 
@@ -169,7 +169,7 @@ class RShapeEditOperator:
 
 
 class RoadCreate(bpy.types.Operator):
-    """RoadCreate"""
+    """Create new road collection"""
     bl_idname = 'object.road_create'
     bl_label = 'Create New Road Collection'
     road_name: bpy.props.StringProperty(name='Base Road Name',
@@ -182,7 +182,7 @@ class RoadCreate(bpy.types.Operator):
 
 
 class RoadDelete(bpy.types.Operator, RoadEditOperator):
-    """RoadDelete"""
+    """Delete current road and all its shapes"""
     bl_idname = 'object.road_delete'
     bl_label = 'Delete This Road Collection'
     bl_options = {'REGISTER', 'UNDO'}
@@ -193,7 +193,7 @@ class RoadDelete(bpy.types.Operator, RoadEditOperator):
 
 
 class RoadDuplicate(bpy.types.Operator, RoadEditOperator):
-    """RoadDuplicate"""
+    """Duplicate current road with all its shapes"""
     bl_idname = 'object.road_duplicate'
     bl_label = 'Duplicate This Road Collection'
     bl_options = {'REGISTER', 'UNDO'}
@@ -221,7 +221,7 @@ class RoadDuplicate(bpy.types.Operator, RoadEditOperator):
 
 
 class RoadCreateAdjacent(bpy.types.Operator, RoadEditOperator):
-    """RoadCreateAdjacent"""
+    """Create a new road, shift it adjacently and flip its direction"""
     bl_idname = 'object.road_create_adjacent'
     bl_label = 'Create Adjacent Road'
     bl_options = {'REGISTER', 'UNDO'}
@@ -237,7 +237,7 @@ class RoadCreateAdjacent(bpy.types.Operator, RoadEditOperator):
 
 
 class RoadSeparate(bpy.types.Operator, RShapeEditOperator):
-    """RoadSeparate"""
+    """Create a new road and move selected shapes into it"""
     bl_idname = 'object.road_separate'
     bl_label = 'Separate by selection'
 
@@ -269,7 +269,7 @@ class RShapeAddOperator:
 
 
 class RShapeSelect(bpy.types.Operator):
-    """RShapeSelect"""
+    """Select/Deselect all road shapes of current road"""
     bl_idname = 'object.road_shape_select'
     bl_label = 'De-/Select Linked Road Shapes'
     bl_options = {'REGISTER', 'UNDO'}
@@ -290,12 +290,12 @@ class RShapeSelect(bpy.types.Operator):
 
 
 class RShapeUpdate(bpy.types.Operator, RShapeEditOperator):
-    """RShapeUpdate"""
+    """Update support geometry of selected road shapes"""
     bl_idname = 'object.road_shape_update'
     bl_label = 'Update Road Shapes'
 
     def execute(self, context):
-        og_mode = str(context.object.mode)
+        og_mode = str(context.mode)
         if og_mode != 'OBJECT':
             bpy.ops.object.mode_set()
         objects = context.selected_objects
@@ -311,7 +311,7 @@ class RShapeUpdate(bpy.types.Operator, RShapeEditOperator):
 
 
 class RShapeCreateElliptic(bpy.types.Operator, RShapeAddOperator):
-    """RShapeCreateElliptic"""
+    """Create a set of roadshapes forming an ellipse"""
     bl_idname = 'object.road_shape_create_elliptic'
     bl_label = 'Create elliptic road'
     bl_options = {'REGISTER', 'UNDO'}
@@ -355,7 +355,7 @@ class RShapeCreateElliptic(bpy.types.Operator, RShapeAddOperator):
 
 class RShapeCreateStraight(bpy.types.Operator, RShapeAddOperator):
     # TODO shape objs origin wrong
-    """RShapeCreateStraight"""
+    """Create a set of roadshapes in a straight line"""
     bl_idname = 'object.road_shape_create_straight'
     bl_label = 'Create a row of road pieces'
     bl_options = {'REGISTER', 'UNDO'}
@@ -597,6 +597,8 @@ class MDE_PT_Roads(bpy.types.Panel, RoadModule):
         this_col = get_current_coll(context)
         layout = self.layout
         layout.operator("object.road_create", icon='PLUS')
+        if not get_current_coll(context):
+            return
         if not this_col.road_node_prop.to_export:
             return
         layout.operator("object.road_delete", icon='TRASH')
@@ -627,9 +629,13 @@ class MDE_PT_RoadShapes(bpy.types.Panel, RoadModule):
         row.label(text='', icon='EDITMODE_HLT')
 
     def draw(self, context):
-        if not get_current_coll(context).road_node_prop.to_export:
-            return
         layout = self.layout
+        if not get_current_coll(context):
+            layout.label(text="No road collection selected")
+            return
+        if not get_current_coll(context).road_node_prop.to_export:
+            layout.label(text="No road collection selected")
+            return
         grd = layout.grid_flow()
         grd.label(text='Editing')
         grd.operator('object.road_shape_select', icon='RESTRICT_SELECT_OFF')

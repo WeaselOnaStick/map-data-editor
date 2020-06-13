@@ -10,7 +10,7 @@ def object_is_path_curve(obj):
         return False
     if len(obj.data.splines) != 1:
         return False
-    if obj.data.splines[0].type != 'NURBS':
+    if obj.data.splines[0].type != 'POLY':
         return False
     return True
 
@@ -56,8 +56,11 @@ class FileExportPaths(bpy.types.Operator, ExportHelper):
                 self.report({'ERROR'}, 'No "Paths" collection found')
                 return {'CANCELLED'}
             objs = [x for x in bpy.data.collections['Paths'].objects if object_is_path_curve(x)]
-        export_paths(self.filepath, objs)
-        self.report({'INFO'}, f"Successfully exported paths to {self.filepath}")
+        result = export_paths(self.filepath, objs)
+        if result == 0:
+            self.report({'WARNING', "No paths exported"})
+        else:
+            self.report({'INFO'}, f"Successfully exported {result} paths to {self.filepath}")
         return {'FINISHED'}
 
 

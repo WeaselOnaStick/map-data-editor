@@ -38,11 +38,13 @@ def import_paths(filepath):
 
 def export_paths(filepath, objs):
     root = p3d_et()
+    counter = 0
     for path in objs:
         chunk = write_chunk(root, PAT)
         pos = ET.SubElement(chunk, 'Value', Name='Positions')
         verts = [x.co for x in path.data.splines[0].points]
         for v in verts:
             ET.SubElement(pos, 'Item', X=(str(v.x)), Y=(str(v.z)), Z=(str(v.y)))
-
+            counter += 1
     write_ET(root, filepath)
+    return counter

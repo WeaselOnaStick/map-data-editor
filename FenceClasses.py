@@ -69,24 +69,25 @@ class FenceCreateFromCurve(bpy.types.Operator):
 
     def execute(self, context):
         curve_to_fences(context.selected_objects)
-        return {
-            'FINISHED'}
+        return {'FINISHED'}
 
 
 class FenceCreate(bpy.types.Operator):
     bl_idname = 'object.fence_create'
-    bl_label = 'Create a Fence'
+    bl_label = 'Create a Base Fence'
     bl_options = {'REGISTER', 'UNDO'}
-    end: bpy.props.FloatVectorProperty(name='Relative End Point',
-                                       size=2,
-                                       subtype='XYZ',
-                                       default=(10, 30))
+    end: bpy.props.FloatVectorProperty(
+        name='Relative End Point',
+        size=2,
+        subtype='XYZ',
+        default=(10, 30),
+    )
 
     def execute(self, context):
-        fence_create(context.scene.cursor.location,
-                     context.scene.cursor.location + self.end.to_3d())
-        return {
-            'FINISHED'}
+        fence_create(
+            context.scene.cursor.location,
+            context.scene.cursor.location + self.end.to_3d())
+        return {'FINISHED'}
 
 
 class FenceFlip(bpy.types.Operator):

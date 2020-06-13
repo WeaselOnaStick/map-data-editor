@@ -1,8 +1,9 @@
 import bpy
 from bpy.props import *
 from bpy_extras.io_utils import ExportHelper, ImportHelper
-from .PathManager import import_paths, export_paths
+from .PathManager import *
 from .utils_bpy import pcoll
+from . import utils_math
 
 
 def object_is_path_curve(obj):
@@ -19,15 +20,16 @@ class FileImportPaths(bpy.types.Operator, ImportHelper):
     bl_idname = 'import_scene.paths_p3dxml'
     bl_label = 'Import Pedestrian Paths'
     filename_ext = '.p3dxml'
-    filter_glob: bpy.props.StringProperty(default='*.p3dxml',
-                                          options={
-                                              'HIDDEN'},
-                                          maxlen=255)
+    filter_glob: bpy.props.StringProperty(
+        default='*.p3dxml',
+        options={'HIDDEN'},
+        maxlen=255,
+    )
 
     def execute(self, context):
-        result_message = import_paths(self.filepath)
-        if result_message != 'OK':
-            self.report(type={'ERROR'}, message=result_message)
+        result = import_paths(self.filepath)
+        if result != 'OK':
+            self.report(type={'ERROR'}, message=result)
             return {'FINISHED'}
         else:
             return {'FINISHED'}
@@ -46,6 +48,7 @@ class FileExportPaths(bpy.types.Operator, ExportHelper):
                                           default=False)
 
     def execute(self, context):
+        result = None
         if self.selected_only:
             objs = [x for x in context.selected_objects if object_is_path_curve(x)]
             if not objs:
@@ -59,29 +62,55 @@ class FileExportPaths(bpy.types.Operator, ExportHelper):
         result = export_paths(self.filepath, objs)
         if result == 0:
             self.report({'WARNING', "No paths exported"})
+            return {'CANCELLED'}
         else:
             self.report({'INFO'}, f"Successfully exported {result} paths to {self.filepath}")
-        return {'FINISHED'}
+            return {'FINISHED'}
 
 
 class PathCreate(bpy.types.Operator):
     bl_idname = 'object.path_create'
-    bl_label = 'Create a Path'
+    bl_label = 'Create a Base Path'
+
+    radius: bpy.props.FloatProperty(
+        description='Radius of the curve',
+        name='Radius',
+        min=0,
+        default=8,)
+    resolution: bpy.props.IntProperty(
+        description='Amount of spline points to generate',
+        name='Resolution',
+        min=2,
+        soft_max=20,
+        default=6,)
+    offset: bpy.props.FloatVectorProperty(
+        name='Offset',
+        subtype='XYZ',
+        unit='LENGTH')
+    rotation: bpy.props.FloatVectorProperty(
+        name='Rotation',
+        subtype='EULER',
+        unit='ROTATION'
+    )
+    scale: bpy.props.FloatVectorProperty(
+        name='Scale',
+        subtype='XYZ',
+        min=0.01
+        default=(1, 1),
+        size=2,)
 
     def execute(self, context):
-        print('nothing was done')
-        return {
-            'FINISHED'}
-
-
-class PathDelete(bpy.types.Operator):
-    bl_idname = 'object.path_delete'
-    bl_label = 'Delete this path'
-
-    def execute(self, context):
-        print('nothing was done')
-        return {
-            'FINISHED'}
+        paths_collection = get_paths_collection()
+        path_curve = bpy.data.curves.new(name='Path', type='CURVE')
+        path_spline = path_curve.splines.new(type='POLY')
+        path_spline.points.add(self.resolution + 1)
+        spline_pts = utils_math.build_circle(self.as_keywords, origin=context.scene.cursor.location)
+        path_object = bpy.data.objects.new('Path', path_curve)
+        paths_collection.objects.link(path_object)
+        path_object.select_set(True)
+        path_object.show_wire = True
+        path_object.show_in_front = True
+        return {'FINISHED'}
 
 
 class PathModule:
@@ -123,7 +152,5 @@ class MDE_PT_Paths(bpy.types.Panel, PathModule):
 
     def draw(self, context):
         layout = self.layout
-        box = layout.box()
-        grd = box.grid_flow(row_major=True, align=True)
-        grd.label(text="#TODO")
+        layout.operator('object.path_create', icon='PLUS')
         # TODO actually make path operators

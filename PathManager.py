@@ -8,14 +8,19 @@ def path_create():
     pass
 
 
-def import_paths(filepath):
-    bpy.ops.object.select_all(action='DESELECT')
-    root = terra_read(filepath)
+def get_paths_collection():
     if 'Paths' not in bpy.context.scene.collection.children:
         paths_collection = bpy.data.collections.new('Paths')
         bpy.context.scene.collection.children.link(paths_collection)
     else:
         paths_collection = bpy.data.collections['Paths']
+    return paths_collection
+
+
+def import_paths(filepath):
+    bpy.ops.object.select_all(action='DESELECT')
+    root = terra_read(filepath)
+    paths_collection = get_paths_collection()
     if not find_chunks(root, PAT):
         return "No path chunks found in the file"
     for path in find_chunks(root, PAT):
@@ -45,6 +50,6 @@ def export_paths(filepath, objs):
         verts = [x.co for x in path.data.splines[0].points]
         for v in verts:
             ET.SubElement(pos, 'Item', X=(str(v.x)), Y=(str(v.z)), Z=(str(v.y)))
-            counter += 1
+        counter += 1
     write_ET(root, filepath)
     return counter

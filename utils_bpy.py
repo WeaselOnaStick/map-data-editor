@@ -6,10 +6,10 @@ from os import path
 def get_current_coll(context):
     if len(context.selected_objects) >= 1:
         return context.selected_objects[0].users_collection[0]
-    if context.view_layer.active_layer_collection.collection != context.scene.collection:
-        return context.view_layer.active_layer_collection.collection
     if context.object:
         return context.object.users_collection[0]
+    if context.view_layer.active_layer_collection.collection != context.scene.collection:
+        return context.view_layer.active_layer_collection.collection
 
 
 def get_col_parent(collection):

@@ -5,6 +5,16 @@ from .PathManager import import_paths, export_paths
 from .utils_bpy import pcoll
 
 
+def object_is_path_curve(obj):
+    if obj.type != 'CURVE':
+        return False
+    if len(obj.data.splines) != 1:
+        return False
+    if obj.data.splines[0].type != 'NURBS':
+        return False
+    return True
+
+
 class FileImportPaths(bpy.types.Operator, ImportHelper):
     bl_idname = 'import_scene.paths_p3dxml'
     bl_label = 'Import Pedestrian Paths'
@@ -37,21 +47,18 @@ class FileExportPaths(bpy.types.Operator, ExportHelper):
 
     def execute(self, context):
         if self.selected_only:
-            objs = context.selected_objects
+            objs = [x for x in context.selected_objects if object_is_path_curve(x)]
             if not objs:
-                self.report({'ERROR_INVALID_INPUT'}, 'No Paths selected!')
-                return {
-                    'CANCELLED'}
+                self.report({'ERROR_INVALID_INPUT'}, 'No valid path objects selected!')
+                return {'CANCELLED'}
         else:
             if 'Paths' not in bpy.data.collections:
                 self.report({'ERROR'}, 'No "Paths" collection found')
-                return {
-                    'CANCELLED'}
-            objs = bpy.data.collections['Paths'].objects
+                return {'CANCELLED'}
+            objs = [x for x in bpy.data.collections['Paths'].objects if object_is_path_curve(x)]
         export_paths(self.filepath, objs)
         self.report({'INFO'}, f"Successfully exported paths to {self.filepath}")
-        return {
-            'FINISHED'}
+        return {'FINISHED'}
 
 
 class PathCreate(bpy.types.Operator):
@@ -70,43 +77,6 @@ class PathDelete(bpy.types.Operator):
 
     def execute(self, context):
         print('nothing was done')
-        return {
-            'FINISHED'}
-
-
-def ContextIsPCurve(context):
-    if not context.selected_objects:
-        return False
-    if len(context.selected_objects) != 1:
-        return False
-    if context.selected_objects[0].type != 'CURVE':
-        return False
-    if len(context.object.data.splines) != 1:
-        return False
-    if context.object.data.splines[0].type != 'NURBS':
-        return False
-    return True
-
-
-class PathCurvePrepare(bpy.types.Operator):
-    bl_idname = 'object.path_curve_prepare'
-    bl_label = 'Prepare path curve'
-
-    def execute(self, context):
-        print('nothing was done')
-        return {
-            'FINISHED'}
-
-
-class PathCurveFinalize(bpy.types.Operator):
-    bl_idname = 'object.path_curve_finalize'
-    bl_label = 'Finalize path curve'
-
-    @classmethod
-    def poll(cls, context):
-        return ContextIsPCurve(context)
-
-    def execute(self, context):
         return {
             'FINISHED'}
 

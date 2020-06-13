@@ -93,6 +93,7 @@ def find_xyz(loc, valname):
 
 
 def item_to_vector(item):
+    """Converts XML item object to vector. SWAPS Y and Z"""
     v = Vector()
     v.x = float(item.attrib['X'])
     v.y = float(item.attrib['Z'])

@@ -29,6 +29,7 @@ def import_paths(filepath):
         for vert in path.findall('Value/*'):
             locs.append(item_to_vector(vert).to_4d())
         path_curve = bpy.data.curves.new(name='Path', type='CURVE')
+        path_curve.dimensions = '3D'
         path_spline = path_curve.splines.new(type='POLY')
         path_spline.points.add(len(locs)-1)
         for i, vert in enumerate(locs):
@@ -56,9 +57,26 @@ def export_paths(filepath, objs):
     return counter
 
 
+def path_create_basic(cursor):
+    paths_collection = get_paths_collection()
+    path_curve = bpy.data.curves.new(name='Path', type='CURVE')
+    path_curve.dimensions = '3D'
+    path_spline = path_curve.splines.new(type='POLY')
+    path_spline.points.add(1)
+    path_spline.points[0].co = (cursor.location.copy() - Vector((5, 0, 0))).to_4d()
+    path_spline.points[1].co = (cursor.location.copy() + Vector((5, 0, 0))).to_4d()
+    path_object = bpy.data.objects.new('Path', path_curve)
+    paths_collection.objects.link(path_object)
+    path_object.select_set(True)
+    bpy.context.view_layer.objects.active = path_object
+    path_object.show_wire = True
+    path_object.show_in_front = True
+
+
 def path_create_circular(cursor, kwargs):
     paths_collection = get_paths_collection()
     path_curve = bpy.data.curves.new(name='Path', type='CURVE')
+    path_curve.dimensions = '3D'
     path_spline = path_curve.splines.new(type='POLY')
     path_spline.points.add(kwargs['resolution'])
     spline_pts = utils_math.build_circle(**kwargs, origin=cursor.location.copy())

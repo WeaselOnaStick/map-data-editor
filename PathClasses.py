@@ -68,9 +68,20 @@ class FileExportPaths(bpy.types.Operator, ExportHelper):
             return {'FINISHED'}
 
 
-class PathCreate(bpy.types.Operator):
-    bl_idname = 'object.path_create'
-    bl_label = 'Create a Base Path'
+class PathCreateBasic(bpy.types.Operator):
+    bl_idname = 'object.path_create_basic'
+    bl_label = 'Create a Basic Path'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        path_create_basic(cursor=context.scene.cursor)
+        bpy.ops.object.mode_set(mode='EDIT')
+        return {'FINISHED'}
+
+
+class PathCreateCircular(bpy.types.Operator):
+    bl_idname = 'object.path_create_circular'
+    bl_label = 'Create a Circular Path'
     bl_options = {'REGISTER', 'UNDO'}
 
     radius: bpy.props.FloatProperty(
@@ -144,4 +155,6 @@ class MDE_PT_Paths(bpy.types.Panel, PathModule):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator('object.path_create', icon='PLUS')
+        layout.operator('object.path_create_basic', icon='CURVE_PATH')
+        layout.operator('object.path_create_circular', icon='LIGHT_POINT')
+        layout.operator('object.transform_apply', text="Apply Transforms", icon="CHECKMARK")

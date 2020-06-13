@@ -58,6 +58,7 @@ def export_paths(filepath, objs):
 
 
 def path_create_basic(cursor):
+    bpy.ops.object.select_all(action='DESELECT')
     paths_collection = get_paths_collection()
     path_curve = bpy.data.curves.new(name='Path', type='CURVE')
     path_curve.dimensions = '3D'
@@ -74,6 +75,7 @@ def path_create_basic(cursor):
 
 
 def path_create_circular(cursor, kwargs):
+    bpy.ops.object.select_all(action='DESELECT')
     paths_collection = get_paths_collection()
     path_curve = bpy.data.curves.new(name='Path', type='CURVE')
     path_curve.dimensions = '3D'

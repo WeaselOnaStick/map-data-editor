@@ -148,10 +148,8 @@ class MDE_PT_Fences(bpy.types.Panel, FenceModule):
     def draw(self, context):
         layout = self.layout
         row = layout.row()
-        row.prop((context.area.spaces[0].overlay),
-                 'show_face_orientation', text='Display Fence Orientation')
+        row.prop((context.area.spaces[0].overlay), 'show_face_orientation', text='Display Fence Orientation')
         col = layout.column()
         col.operator((FenceCreate.bl_idname), icon='PLUS')
         col.operator((FenceFlip.bl_idname), icon='UV_SYNC_SELECT')
-        col.operator((FenceCreateFromCurve.bl_idname),
-                     icon='OUTLINER_OB_CURVE')
+        col.operator((FenceCreateFromCurve.bl_idname), icon='OUTLINER_OB_CURVE')

@@ -14,7 +14,7 @@ def fence_create(a=Vector((0, 0, 0)), b=Vector((15, 15, 0))):
     else:
         fence_collection = bpy.data.collections['Fences']
     fc = bpy.data.curves.new('Fence', 'CURVE')
-    fc.dimensions = '3D'
+    fc.dimensions = '2D'
     fc.extrude = 50
     fcs = fc.splines.new('NURBS')
     fcs.points.add(1)
@@ -63,12 +63,10 @@ def invalid_fences(objs):
             naughty.append(f'{ob.name} is not inside "Fences" collection')
             continue
         if len(ob.data.splines) != 1:
-            naughty.append(
-                f"{ob.name} has {len(ob.data.splines)} splines instead of 1")
+            naughty.append(f"{ob.name} has {len(ob.data.splines)} splines instead of 1")
             continue
         if len(ob.data.splines[0].points) != 2:
-            naughty.append(
-                f"{ob.name} has {len(ob.data.splines[0].points)} spline points instead of 2")
+            naughty.append(f"{ob.name} has {len(ob.data.splines[0].points)} spline points instead of 2")
             continue
         if ob.data.splines[0].type != 'NURBS':
             naughty.append(f"{ob.name}\'s spline type is not \"NURBS\" ")

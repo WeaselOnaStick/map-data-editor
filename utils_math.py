@@ -38,7 +38,8 @@ def build_circle(radius: float, resolution: int, origin: Vector, offset: Vector,
     origin += offset
     for i in range(resolution):
         p = Vector()
-        p = radians*Vector((cos(i*2*pi/resolution)*scale.x, sin(i*2*pi/resolution)*scale.z, 0))
+        p = Vector((cos(i*2*pi/resolution)*scale.x, sin(i*2*pi/resolution)*scale.y, 0))
+        p *= radius
         p.rotate(rotation)
         p += origin
         points.append(p)

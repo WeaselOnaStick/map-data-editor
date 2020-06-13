@@ -71,6 +71,7 @@ class FileExportPaths(bpy.types.Operator, ExportHelper):
 class PathCreate(bpy.types.Operator):
     bl_idname = 'object.path_create'
     bl_label = 'Create a Base Path'
+    bl_options = {'REGISTER', 'UNDO'}
 
     radius: bpy.props.FloatProperty(
         description='Radius of the curve',
@@ -95,21 +96,12 @@ class PathCreate(bpy.types.Operator):
     scale: bpy.props.FloatVectorProperty(
         name='Scale',
         subtype='XYZ',
-        min=0.01
+        min=0.01,
         default=(1, 1),
         size=2,)
 
     def execute(self, context):
-        paths_collection = get_paths_collection()
-        path_curve = bpy.data.curves.new(name='Path', type='CURVE')
-        path_spline = path_curve.splines.new(type='POLY')
-        path_spline.points.add(self.resolution + 1)
-        spline_pts = utils_math.build_circle(self.as_keywords, origin=context.scene.cursor.location)
-        path_object = bpy.data.objects.new('Path', path_curve)
-        paths_collection.objects.link(path_object)
-        path_object.select_set(True)
-        path_object.show_wire = True
-        path_object.show_in_front = True
+        path_create_circular(cursor=context.scene.cursor, kwargs=self.as_keywords())
         return {'FINISHED'}
 
 

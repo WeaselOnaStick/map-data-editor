@@ -2,6 +2,7 @@ import bmesh
 import bpy
 from .utils_bpy import *
 from .utils_p3dxml import *
+from . import utils_math
 
 
 def path_create():
@@ -53,3 +54,19 @@ def export_paths(filepath, objs):
         counter += 1
     write_ET(root, filepath)
     return counter
+
+
+def path_create_circular(cursor, kwargs):
+    paths_collection = get_paths_collection()
+    path_curve = bpy.data.curves.new(name='Path', type='CURVE')
+    path_spline = path_curve.splines.new(type='POLY')
+    path_spline.points.add(kwargs['resolution'])
+    spline_pts = utils_math.build_circle(**kwargs, origin=cursor.location.copy())
+    for i, spline_point in enumerate(spline_pts):
+        path_spline.points[i].co = spline_point.to_4d()
+    path_object = bpy.data.objects.new('Path', path_curve)
+    paths_collection.objects.link(path_object)
+    path_object.select_set(True)
+    bpy.context.view_layer.objects.active = path_object
+    path_object.show_wire = True
+    path_object.show_in_front = True

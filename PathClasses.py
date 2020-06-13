@@ -145,4 +145,3 @@ class MDE_PT_Paths(bpy.types.Panel, PathModule):
     def draw(self, context):
         layout = self.layout
         layout.operator('object.path_create', icon='PLUS')
-        # TODO actually make path operators

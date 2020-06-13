@@ -24,7 +24,6 @@ bl_info = {'name': "Weasel's Map Data Editor",
 
 
 class WMDE_Preferences(bpy.types.AddonPreferences):
-    # TODO enable all modules by default before release
     bl_idname = __name__
     RoadsEnabled: bpy.props.BoolProperty(name='Enable Roads Module',
                                          default=True)

@@ -1,9 +1,12 @@
 from math import pi
 from time import time
-import bpy, bmesh, bpy_extras.object_utils
+import bpy
+import bmesh
+import bpy_extras.object_utils
 from . import utils_math
 from .utils_p3dxml import *
 add_object = bpy_extras.object_utils.object_data_add
+
 
 def inter_create(inter_name, position, radius, behaviour):
     if 'Intersections' not in bpy.data.collections:
@@ -92,12 +95,12 @@ def rs_create_base(collection, a=None, b=None, c=None, d=None, name='RoadShape')
 
 def rs_create_straight(collection, context, kwargs):
     points = utils_math.create_straight(start=(context.scene.cursor.location + kwargs['loc']),
-      rotation=(kwargs['rot']),
-      resolution=(kwargs['resolution']),
-      width=(kwargs['width']),
-      length=(kwargs['length']))
+                                        rotation=(kwargs['rot']),
+                                        resolution=(kwargs['resolution']),
+                                        width=(kwargs['width']),
+                                        length=(kwargs['length']))
     for i, vvvv in enumerate(points):
-        rs_create_base(collection, *vvvv, **{'name': f"StraightRoadShape{i}"})
+        rs_create_base(collection, *vvvv, name=f"StraightRoadShape{i}")
 
 
 def rs_create_ellip(collection, args):
@@ -156,11 +159,13 @@ def rs_edit_upd(obj):
 
     obj.data.update()
 
+
 def rs_edit_width(shape_obj, delta, pivot):
     newlocs = utils_math.edit_width(*[x.co.copy() for x in shape_obj.data.vertices][::2], delta, pivot)
-    for i,v in enumerate(newlocs):
+    for i, v in enumerate(newlocs):
         shape_obj.data.vertices[i*2].co = v
     rs_edit_upd(shape_obj)
+
 
 def rs_edit_flip(shape_obj):
     bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)

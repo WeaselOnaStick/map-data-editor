@@ -34,7 +34,7 @@ class RoadPropGroup(bpy.types.PropertyGroup):
                                  min=0,
                                  max=200)
     intel: bpy.props.IntProperty(name='Intelligence',
-                                 description='Defines how much intel does an AI car has to have in order to use this road',
+                                 description='How much intel does an AI car has to have in order to use this road',
                                  default=0,
                                  min=0,
                                  max=50)
@@ -276,7 +276,7 @@ class RShapeSelect(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return get_current_coll(context).road_node_prop.to_export
+        return get_current_coll(context).road_node_prop.to_export and get_current_coll(context).objects
 
     def execute(self, context):
         if all([x.select_get() for x in get_current_coll(context).objects]):
@@ -354,7 +354,6 @@ class RShapeCreateElliptic(bpy.types.Operator, RShapeAddOperator):
 
 
 class RShapeCreateStraight(bpy.types.Operator, RShapeAddOperator):
-    # TODO shape objs origin wrong
     """Create a set of roadshapes in a straight line"""
     bl_idname = 'object.road_shape_create_straight'
     bl_label = 'Create a row of road pieces'
@@ -362,7 +361,7 @@ class RShapeCreateStraight(bpy.types.Operator, RShapeAddOperator):
     loc: bpy.props.FloatVectorProperty(name='Location',
                                        subtype='XYZ',
                                        unit='LENGTH')
-    rot: bpy.props.FloatVectorProperty(name='End Point Location',
+    rot: bpy.props.FloatVectorProperty(name='Rotation',
                                        subtype='EULER',
                                        unit='ROTATION')
     resolution: bpy.props.IntProperty(description='Amount of road shapes in an array',
@@ -389,8 +388,7 @@ class RShapeCreateStraight(bpy.types.Operator, RShapeAddOperator):
         return self.execute(context)
 
     def execute(self, context):
-        RoadManager.rs_create_straight(get_current_coll(context),
-                                       context, self.as_keywords())
+        RoadManager.rs_create_straight(get_current_coll(context), context, self.as_keywords())
         return {'FINISHED'}
 
 

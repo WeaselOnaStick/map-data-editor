@@ -27,7 +27,7 @@ class WMDE_Preferences(bpy.types.AddonPreferences):
     bl_idname = __name__
     RoadsEnabled: bpy.props.BoolProperty(name='Enable Roads Module',
                                          default=True)
-    PathsEnabled: bpy.props.BoolProperty(name='Enable Paths Module (WIP)',
+    PathsEnabled: bpy.props.BoolProperty(name='Enable Paths Module',
                                          default=True)
     FencesEnabled: bpy.props.BoolProperty(name='Enable Fences Module',
                                           default=True)

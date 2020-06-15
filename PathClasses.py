@@ -18,7 +18,7 @@ def object_is_path_curve(obj):
 
 class FileImportPaths(bpy.types.Operator, ImportHelper):
     bl_idname = 'import_scene.paths_p3dxml'
-    bl_label = 'Import Pedestrian Paths'
+    bl_label = 'Import Paths...'
     filename_ext = '.p3dxml'
     filter_glob: bpy.props.StringProperty(
         default='*.p3dxml',
@@ -37,13 +37,13 @@ class FileImportPaths(bpy.types.Operator, ImportHelper):
 
 class FileExportPaths(bpy.types.Operator, ExportHelper):
     bl_idname = 'export_scene.paths_p3dxml'
-    bl_label = 'Export Pedestrian Paths'
+    bl_label = 'Export Paths...'
     filename_ext = '.p3dxml'
     filter_glob: bpy.props.StringProperty(default='*.p3dxml',
                                           options={
                                               'HIDDEN'},
                                           maxlen=255)
-    selected_only: bpy.props.BoolProperty(name='Export Selected Paths Only',
+    selected_only: bpy.props.BoolProperty(name='Selected Only',
                                           description='Only export selected path objects',
                                           default=False)
 

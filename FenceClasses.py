@@ -6,7 +6,7 @@ from .FenceManager import *
 
 class FileImportFences(bpy.types.Operator, ImportHelper):
     bl_idname = 'import_scene.fences_p3dxml'
-    bl_label = 'Import Fences'
+    bl_label = 'Import Fences...'
     filename_ext = '.p3dxml'
     filter_glob: bpy.props.StringProperty(default='*.p3dxml',
                                           options={
@@ -21,13 +21,13 @@ class FileImportFences(bpy.types.Operator, ImportHelper):
 
 class FileExportFences(bpy.types.Operator, ExportHelper):
     bl_idname = 'export_scene.fences_p3dxml'
-    bl_label = 'Export Fences'
+    bl_label = 'Export Fences...'
     filename_ext = '.p3dxml'
     filter_glob: bpy.props.StringProperty(default='*.p3dxml',
                                           options={
                                               'HIDDEN'},
                                           maxlen=255)
-    selected_only: bpy.props.BoolProperty(name='Export Selected Fences Only',
+    selected_only: bpy.props.BoolProperty(name='Selected Only',
                                           description='Only export selected fences',
                                           default=False)
     safe_check: bpy.props.BoolProperty(name='Check Fence Validity',

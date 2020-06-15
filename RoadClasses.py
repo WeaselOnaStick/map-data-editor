@@ -48,12 +48,12 @@ class RoadPropGroup(bpy.types.PropertyGroup):
 
 class FileImportRoads(bpy.types.Operator, ImportHelper):
     bl_idname = 'import_scene.roads_p3dxml'
-    bl_label = 'Import Roads and Intersections'
+    bl_label = 'Import All Roads...'
     filename_ext = '.p3dxml'
     filter_glob: bpy.props.StringProperty(default='*.p3dxml',
                                           options={'HIDDEN'},
                                           maxlen=255)
-    try_sort: bpy.props.BoolProperty(name='Attempt to sort',
+    try_sort: bpy.props.BoolProperty(name='Try to sort',
                                      description='Attempt to sort imported road nodes based on first 2 characters in the name',
                                      default=True)
 
@@ -64,18 +64,18 @@ class FileImportRoads(bpy.types.Operator, ImportHelper):
 
 class FileExportRoadsAndIntersects(bpy.types.Operator, ExportHelper):
     bl_idname = 'export_scene.roads_p3dxml'
-    bl_label = 'Export Roads and Intersections'
+    bl_label = 'Export All Roads...'
     filename_ext = '.p3dxml'
     filter_glob: bpy.props.StringProperty(default='*.p3dxml',
                                           options={'HIDDEN'},
                                           maxlen=255)
-    selected_only: bpy.props.BoolProperty(name='Export Selected Nodes Only',
+    selected_only: bpy.props.BoolProperty(name='Selected Only',
                                           description='Only export Road Networks that have selected shapes and only selected intersections',
                                           default=False)
-    safe_check: bpy.props.BoolProperty(name='Check Road Network Validity',
+    safe_check: bpy.props.BoolProperty(name='Check Validity',
                                        description='Check if the Road Network is valid before exporting\nNot fully crash-proof',
                                        default=True)
-    connect_margin: bpy.props.FloatProperty(name='Road connectivity error limit',
+    connect_margin: bpy.props.FloatProperty(name='Validity Margin',
                                             description='Value used to determine if road shapes are properly connected to their intersections',
                                             default=1.5,
                                             min=0)

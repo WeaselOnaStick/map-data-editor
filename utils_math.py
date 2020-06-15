@@ -92,14 +92,13 @@ def create_straight(start, rotation, resolution, width, length):
     points = []
     step = Vector()
     step.y = length / resolution
-    print(step)
     step.rotate(rotation)
     sidestep = Vector((width / 2, 0, 0))
     sidestep.rotate(rotation)
-    a = start + sidestep
+    a = start
     b = a + step
-    d = start - sidestep
-    c = d + step
+    d = a + sidestep
+    c = a + step + sidestep
     points.append((a, b, c, d))
     for i in list(range(resolution))[1:]:
         a = b

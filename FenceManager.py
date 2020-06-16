@@ -16,13 +16,15 @@ def fence_create(a=Vector((0, 0, 0)), b=Vector((15, 15, 0))):
     fc = bpy.data.curves.new('Fence', 'CURVE')
     fc.dimensions = '2D'
     fc.extrude = 50
-    fcs = fc.splines.new('NURBS')
+    fcs = fc.splines.new('POLY')
     fcs.points.add(1)
     fcs.points[0].co = a.to_4d()
     fcs.points[1].co = b.to_4d()
     fcs.use_endpoint_u = True
+    fcs.use_smooth = False
     fco = bpy.data.objects.new('Fence', fc)
     fence_collection.objects.link(fco)
+    return fco
 
 
 def fence_flip(obj):
@@ -33,7 +35,10 @@ def fence_flip(obj):
     p[1].co = a
 
 
-def curve_to_fences(objs):
+def rip_polys_to_fences(objs):
+    bpy.ops.object.mode_set(mode='OBJECT')
+    for obj in objs:
+        obj.data.dimensions = '3D'
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
     for obj in objs:
         for spline in obj.data.splines:
@@ -41,7 +46,6 @@ def curve_to_fences(objs):
                 [x.co for x in spline.bezier_points]
             for i in range(len(sp_points) - 1):
                 fence_create(sp_points[i], sp_points[(i + 1)])
-
         bpy.data.objects.remove(obj)
 
 
@@ -55,6 +59,8 @@ def import_fences(filepath):
 
 def invalid_fences(objs):
     naughty = []
+    if not objs:
+        return "No Fences Selected"
     for ob in objs:
         if ob.type != 'CURVE':
             naughty.append(f"{ob.name} is not a CURVE object")
@@ -68,10 +74,9 @@ def invalid_fences(objs):
         if len(ob.data.splines[0].points) != 2:
             naughty.append(f"{ob.name} has {len(ob.data.splines[0].points)} spline points instead of 2")
             continue
-        if ob.data.splines[0].type != 'NURBS':
+        if ob.data.splines[0].type != 'POLY':
             naughty.append(f"{ob.name}\'s spline type is not \"NURBS\" ")
             continue
-
     if not naughty:
         return False
     return '\n'.join(naughty)

@@ -53,22 +53,7 @@ class FileExportFences(bpy.types.Operator, ExportHelper):
                 return {
                     'CANCELLED'}
         export_fences(self.filepath, objs)
-        self.report(
-            {'INFO'}, f"Successfully exported {len(objs)} Fences to {self.filepath}")
-        return {
-            'FINISHED'}
-
-
-class FenceCreateFromCurve(bpy.types.Operator):
-    bl_idname = 'object.fence_curve_finalize'
-    bl_label = 'Finalize fence curve'
-
-    @classmethod
-    def poll(cls, context):
-        return bool(invalid_fences(context.selected_objects))
-
-    def execute(self, context):
-        curve_to_fences(context.selected_objects)
+        self.report({'INFO'}, f"Successfully exported {len(objs)} Fences to {self.filepath}")
         return {'FINISHED'}
 
 
@@ -84,9 +69,12 @@ class FenceCreate(bpy.types.Operator):
     )
 
     def execute(self, context):
-        fence_create(
+        fence_obj = fence_create(
             context.scene.cursor.location,
             context.scene.cursor.location + self.end.to_3d())
+        fence_obj.select_set(True)
+        bpy.context.view_layer.objects.active = fence_obj
+        bpy.ops.object.mode_set(mode='EDIT')
         return {'FINISHED'}
 
 
@@ -106,6 +94,30 @@ class FenceFlip(bpy.types.Operator):
             fence_flip(obj)
 
         return {'FINISHED'}
+
+
+class FenceRip(bpy.types.Operator):
+    bl_idname = 'object.fence_rip'
+    bl_label = 'Rip Poly Curve'
+
+    @classmethod
+    def poll(cls, context):
+        ob = context.object
+        if not ob:
+            return False
+        if ob.type != 'CURVE':
+            return False
+        if len(ob.data.splines) != 1:
+            return False
+        if len(ob.data.splines[0].points) <= 2:
+            return False
+        if ob.data.splines[0].type != 'POLY':
+            return False
+        return True
+
+    def execute(self, context):
+        rip_polys_to_fences(context.selected_objects)
+        return{'FINISHED'}
 
 
 class FenceModule:
@@ -148,8 +160,8 @@ class MDE_PT_Fences(bpy.types.Panel, FenceModule):
     def draw(self, context):
         layout = self.layout
         row = layout.row()
-        row.prop((context.area.spaces[0].overlay), 'show_face_orientation', text='Display Fence Orientation')
+        row.prop((context.area.spaces[0].overlay), 'show_face_orientation', text='Display Fence Orientation', icon='NORMALS_FACE')
         col = layout.column()
         col.operator((FenceCreate.bl_idname), icon='PLUS')
         col.operator((FenceFlip.bl_idname), icon='UV_SYNC_SELECT')
-        col.operator((FenceCreateFromCurve.bl_idname), icon='OUTLINER_OB_CURVE')
+        col.operator((FenceRip.bl_idname), icon='MOD_ARRAY')

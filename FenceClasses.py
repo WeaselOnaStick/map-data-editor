@@ -102,21 +102,46 @@ class FenceRip(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        ob = context.object
-        if not ob:
+        objs = context.selected_objects
+        if not objs:
             return False
-        if ob.type != 'CURVE':
-            return False
-        if len(ob.data.splines) != 1:
-            return False
-        if len(ob.data.splines[0].points) <= 2:
-            return False
-        if ob.data.splines[0].type != 'POLY':
-            return False
+        for ob in objs:
+            if ob.type != 'CURVE':
+                return False
+            if len(ob.data.splines) != 1:
+                return False
+            if len(ob.data.splines[0].points) <= 2:
+                return False
+            if ob.data.splines[0].type != 'POLY':
+                return False
         return True
 
     def execute(self, context):
         rip_polys_to_fences(context.selected_objects)
+        return{'FINISHED'}
+
+
+class FenceApplyTran(bpy.types.Operator):
+    bl_idname = 'object.fence_apply_tran'
+    bl_label = 'Apply Fence Transforms'
+
+    @classmethod
+    def poll(cls, context):
+        if not context.selected_objects:
+            return False
+        for ob in context.selected_objects:
+            if ob.type != 'CURVE':
+                return False
+        return True
+
+    def execute(self, context):
+        bpy.ops.object.mode_set(mode='OBJECT')
+        objs = context.selected_objects
+        for fobj in objs:
+            fobj.data.dimensions = '3D'
+        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+        for fobj in objs:
+            fobj.data.dimensions = '2D'
         return{'FINISHED'}
 
 
@@ -165,3 +190,4 @@ class MDE_PT_Fences(bpy.types.Panel, FenceModule):
         col.operator((FenceCreate.bl_idname), icon='PLUS')
         col.operator((FenceFlip.bl_idname), icon='UV_SYNC_SELECT')
         col.operator((FenceRip.bl_idname), icon='MOD_ARRAY')
+        col.operator((FenceApplyTran.bl_idname), icon='CHECKMARK')

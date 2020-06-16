@@ -48,7 +48,7 @@ class RoadPropGroup(bpy.types.PropertyGroup):
 
 class FileImportRoads(bpy.types.Operator, ImportHelper):
     bl_idname = 'import_scene.roads_p3dxml'
-    bl_label = 'Import All Roads...'
+    bl_label = 'Import Roads...'
     filename_ext = '.p3dxml'
     filter_glob: bpy.props.StringProperty(default='*.p3dxml',
                                           options={'HIDDEN'},
@@ -64,7 +64,7 @@ class FileImportRoads(bpy.types.Operator, ImportHelper):
 
 class FileExportRoadsAndIntersects(bpy.types.Operator, ExportHelper):
     bl_idname = 'export_scene.roads_p3dxml'
-    bl_label = 'Export All Roads...'
+    bl_label = 'Export Roads...'
     filename_ext = '.p3dxml'
     filter_glob: bpy.props.StringProperty(default='*.p3dxml',
                                           options={'HIDDEN'},
@@ -79,6 +79,14 @@ class FileExportRoadsAndIntersects(bpy.types.Operator, ExportHelper):
                                             description='Value used to determine if road shapes are properly connected to their intersections',
                                             default=1.5,
                                             min=0)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "selected_only")
+        layout.prop(self, "safe_check")
+        row = layout.row()
+        row.prop(self, "connect_margin")
+        row.enabled = context.active_operator.properties.safe_check
 
     def execute(self, context):
         road_cols = []
@@ -432,6 +440,7 @@ class RShapeFinalizeCurve(bpy.types.Operator):
         return ContextIsRCurve(context)
 
     def execute(self, context):
+        bpy.ops.object.mode_set(mode='OBJECT')
         RoadManager.rs_create_from_bezier(context)
         return {'FINISHED'}
 

@@ -161,7 +161,6 @@ def export_locators(objs, filepath):
                                if (vol_obj.parent
                                    and vol_obj.parent not in objs
                                    and vol_obj.parent.locator_prop.is_locator)]
-    print(f"exporting {input_objs}")
     for loc_obj in input_objs:
         locator = write_chunk(root, LOC)
         write_val(locator, "Name", loc_obj.name)
@@ -174,15 +173,14 @@ def export_locators(objs, filepath):
         if loc_obj.locator_prop.loctype in ['EVENT', 'ACTION']:
             loc_mat = write_chunk(locator, LOM)
             write_locrot_to_mat(loc_mat, loc_obj)
+        loc_data = ET.SubElement(locator, "Value", {"Name": "Data"})
         # Type 0 support
         if loc_obj.locator_prop.loctype == 'EVENT':
-            loc_data = ET.SubElement(locator, "Value", {"Name": "Data"})
             write_val(loc_data, "Unknown", loc_obj.locator_prop.event)
             if loc_obj.locator_prop.has_parameter:
                 write_val(loc_data, "Unknown2", loc_obj.locator_prop.parameter)
         # Type 3 Support
         if loc_obj.locator_prop.loctype == 'CAR':
-            loc_data = ET.SubElement(locator, "Value", {"Name": "Data"})
             write_val(loc_data, "Rotation", degrees(
                 loc_obj.matrix_world.to_euler()[2]))
             write_val(loc_data, "ParkedCar", int(
@@ -191,7 +189,6 @@ def export_locators(objs, filepath):
                 write_val(loc_data, "FreeCar", loc_obj.locator_prop.free_car)
         # Type 9 Support
         if loc_obj.locator_prop.loctype == 'ACTION':
-            loc_data = ET.SubElement(locator, "Value", {"Name": "Data"})
             write_val(loc_data, "Unknown2", 3)
             write_val(loc_data, "Unknown3", 1)
             un_data = ET.SubElement(loc_data, "Value", {"Name": "Unknown"})
@@ -200,7 +197,6 @@ def export_locators(objs, filepath):
             ET.SubElement(un_data, "Item", {"Value": loc_obj.locator_prop.action_type})
         # Type 12 Support
         if loc_obj.locator_prop.loctype == 'CAM':
-            loc_data = ET.SubElement(locator, "Value", {"Name": "Data"})
             write_val(loc_data, "Unknown", 0.04)
             write_val(loc_data, "Unknown2", 0.04)
             write_val(loc_data, "Unknown3", 0)

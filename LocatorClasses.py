@@ -125,6 +125,7 @@ class MDE_OP_locator_create(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+        bpy.ops.object.select_all(action='DESELECT')
         loc_obj = LM.locator_create(location=context.scene.cursor.location)
         context.view_layer.objects.active = loc_obj
         loc_obj.select_set(True)
@@ -137,7 +138,10 @@ class MDE_OP_volume_create_sphere(bpy.types.Operator, volume_filter):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        LM.volume_create(parent=get_cur_locator(context), is_rect=False)
+        bpy.ops.object.select_all(action='DESELECT')
+        vol_obj = LM.volume_create(parent=get_cur_locator(context), is_rect=False, location=context.scene.cursor.location)
+        context.view_layer.objects.active = vol_obj
+        vol_obj.select_set(True)
         return {'FINISHED'}
 
 
@@ -147,7 +151,10 @@ class MDE_OP_volume_create_cube(bpy.types.Operator, volume_filter):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        LM.volume_create(parent=get_cur_locator(context), is_rect=True)
+        bpy.ops.object.select_all(action='DESELECT')
+        vol_obj = LM.volume_create(parent=get_cur_locator(context), is_rect=True, location=context.scene.cursor.location)
+        context.view_layer.objects.active = vol_obj
+        vol_obj.select_set(True)
         return {'FINISHED'}
 
 

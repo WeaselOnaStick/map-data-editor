@@ -32,7 +32,7 @@ class WMDE_Preferences(bpy.types.AddonPreferences):
     FencesEnabled: bpy.props.BoolProperty(name='Enable Fences Module',
                                           default=True)
     LocatorsEnabled: bpy.props.BoolProperty(name='Enable Locators Module (WIP)',
-                                            default=False)
+                                            default=True)
 
     def draw(self, context):
         layout = self.layout

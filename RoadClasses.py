@@ -135,20 +135,8 @@ class IntersectCreate(bpy.types.Operator):
                                  self.radius, self.road_beh)
         return {'FINISHED'}
 
-
-class IntersectDelete(bpy.types.Operator):
-    """Delete current intersection"""
-    bl_idname = 'object.intersect_delete'
-    bl_label = 'Delete this intersection'
-
-    @classmethod
-    def poll(cls, context):
-        return context.object and context.object.type == 'EMPTY' and context.object.empty_display_type == 'SPHERE'
-
-    def execute(self, context):
-        bpy.data.objects.remove(context.object)
-        return {'FINISHED'}
-
+def is_intersection(object):
+    return object.type == 'EMPTY' and object.empty_display_type == 'SPHERE'
 
 class RoadEditOperator:
 
@@ -541,7 +529,6 @@ class RShapeFlip(bpy.types.Operator, RShapeEditOperator):
 
 
 class RoadModule:
-
     @classmethod
     def poll(cls, context):
         return context.preferences.addons["map_data_editor"].preferences.RoadsEnabled
@@ -581,9 +568,8 @@ class MDE_PT_Intersections(bpy.types.Panel, RoadModule):
     def draw(self, context):
         layout = self.layout
         layout.operator('object.intersect_create', icon='PLUS')
-        layout.operator('object.intersect_delete', icon='TRASH')
-        if IntersectDelete.poll(context):
-            layout.prop((context.object), 'scale', index=0, text='Radius')
+        if context.object and is_intersection(context.object):
+            layout.prop(context.object, 'scale', index=0, text='Radius')
             layout.prop(context.object, 'inter_road_beh')
 
 

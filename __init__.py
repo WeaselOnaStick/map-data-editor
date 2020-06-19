@@ -73,6 +73,7 @@ class DummyOP(bpy.types.Operator):
 classes = [WMDE_Preferences, FileSplitTerra, DummyOP]
 subclasses = [RoadClasses, PathClasses, FenceClasses, LocatorClasses]
 parents = [bpy.types.Operator, bpy.types.PropertyGroup, bpy.types.Panel]
+#TODO change classes collection for readability
 for cls in subclasses:
     classes += [x[1] for x in inspect.getmembers(cls, inspect.isclass) if any(
         [issubclass(x[1], tryparent) for tryparent in parents])]

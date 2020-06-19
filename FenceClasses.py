@@ -85,14 +85,11 @@ class FenceFlip(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        objs = [x.users_collection[0].name ==
-                'Fences' for x in context.selected_objects]
-        return all(objs) and objs
+        return not(invalid_fences(context.selected_objects))
 
     def execute(self, context):
         for obj in context.selected_objects:
             fence_flip(obj)
-
         return {'FINISHED'}
 
 

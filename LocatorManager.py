@@ -96,6 +96,7 @@ def locator_create(name="Locator", location=Vector(), loctype='EVENT', volume_kw
     return loc_obj
 
 # TODO Type 4 and 12 cam locators here somehow?
+# - Use blender's legacy track constraint for a camera and parent a locator to it
 
 
 def locator_create_cam():

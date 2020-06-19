@@ -14,12 +14,12 @@ from . import utils_bpy
 import inspect
 bl_info = {'name': "Weasel's Map Data Editor",
            'author': 'Weasel On A Stick',
-           'version': (0, 7, 6),
+           'version': (1, 0, 0),
            'blender': (2, 82, 7),
            'location': 'View3D > Sidebar > WMDE',
            'description': 'Edit SHAR map data, including: roads, paths, fences and locators',
-           'tracker_url': 'https://donutteam.com/@WOAS',
-           'wiki_url': 'https://donutteam.com/@WOAS',
+           'tracker_url': 'https://github.com/WeaselOnaStick/map-data-editor/issues',
+           'wiki_url': 'https://github.com/WeaselOnaStick/map-data-editor/wiki',
            'category': 'Import-Export'}
 
 

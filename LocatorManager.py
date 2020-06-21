@@ -58,7 +58,7 @@ action_types = [
 ]
 AT = {x[4]: x[0] for x in action_types}
 AT_rev = {x[0]: x[4] for x in action_types}
-
+#TODO add support for Custom trigger actions https://docs.donutteam.com/docs/lucasmodlauncher/hacks/custom-trigger-actions
 
 def locator_can_have_volume(object):
     return object.locator_prop.loctype not in [LTD[2], LTD[3], LTD[8], LTD[14]]

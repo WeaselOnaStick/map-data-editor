@@ -4,9 +4,9 @@ from os import path
 
 
 def get_current_coll(context):
-    if len(context.selected_objects) >= 1:
+    if len(context.selected_objects) >= 1 and context.selected_objects[0].users_collection[0].road_node_prop.to_export:
         return context.selected_objects[0].users_collection[0]
-    if context.object:
+    if context.object and context.object.users_collection[0].road_node_prop.to_export:
         return context.object.users_collection[0]
     if context.view_layer.active_layer_collection.collection != context.scene.collection:
         return context.view_layer.active_layer_collection.collection

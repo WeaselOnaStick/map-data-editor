@@ -116,7 +116,8 @@ def get_cur_locator(context):
 class volume_filter:
     @ classmethod
     def poll(cls, context):
-        return LM.locator_can_have_volume(get_cur_locator(context))
+        if get_cur_locator(context):
+            return LM.locator_can_have_volume(get_cur_locator(context))
 
 
 class MDE_OP_locator_create(bpy.types.Operator):

@@ -12,7 +12,7 @@ from . import utils_p3dxml
 from . import LocatorManager
 from . import utils_bpy
 import inspect
-bl_info = {'name': "Weasel's Map Data Editor",
+bl_info = {'name': "WMDE - Weasel's Map Data Editor",
            'author': 'Weasel On A Stick',
            'version': (1, 0, 0),
            'blender': (2, 82, 7),

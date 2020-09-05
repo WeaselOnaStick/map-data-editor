@@ -10,6 +10,7 @@ def get_current_coll(context):
         return context.object.users_collection[0]
     if context.view_layer.active_layer_collection.collection != context.scene.collection:
         return context.view_layer.active_layer_collection.collection
+    return False
 
 
 def get_col_parent(collection):

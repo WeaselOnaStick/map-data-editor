@@ -294,6 +294,7 @@ class RShapeUpdate(bpy.types.Operator, RShapeEditOperator):
         og_mode = str(context.mode)
         if og_mode != 'OBJECT':
             bpy.ops.object.mode_set()
+        bpy.ops.object.transform_apply()
         objects = context.selected_objects
         for obj in objects:
             if obj.type != 'MESH':
@@ -337,9 +338,6 @@ class RShapeCreateElliptic(bpy.types.Operator, RShapeAddOperator):
                                          min=0.001,
                                          subtype='XYZ',
                                          default=(1, 1, 0))
-    direction: bpy.props.BoolProperty(description='flips both lanes',
-                                      name='left-hand traffic',
-                                      default=False)
     offset: bpy.props.FloatVectorProperty(name='offset along',
                                           subtype='XYZ',
                                           unit='LENGTH')

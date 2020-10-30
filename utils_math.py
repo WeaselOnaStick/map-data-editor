@@ -3,7 +3,7 @@ from mathutils import *
 import numpy as np
 
 
-def build_arc(angle, radius, resolution, width, scale, direction, offset, origin):
+def build_arc(angle, radius, resolution, width, scale, offset, origin):
     """builds a 2D arc with given angle, radius, resolution and scale"""
     points = []
     origin = Vector(origin.location + offset)
@@ -24,9 +24,6 @@ def build_arc(angle, radius, resolution, width, scale, direction, offset, origin
         c.x = origin.x + cos((i + 1) * angle / resolution) * (radius + width) * scale.x
         c.y = origin.y + sin((i + 1) * angle / resolution) * (radius + width) * scale.y
         c.z = origin.z + (i + 1) * scale.z / resolution
-        if direction:
-            a, b = b, a
-            d, c = c, d
         points.append((a, b, c, d))
 
     return points

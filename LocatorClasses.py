@@ -163,7 +163,7 @@ class LocatorModule:
 
     @ classmethod
     def poll(cls, context):
-        return context.preferences.addons[__name__].preferences.LocatorsEnabled
+        return context.preferences.addons[__package__].preferences.LocatorsEnabled
 
 
 class MDE_PT_LocatorFileManagement(bpy.types.Panel, LocatorModule):

@@ -142,7 +142,10 @@ class RoadEditOperator:
 
     @classmethod
     def poll(cls, context):
-        return get_current_coll(context).road_node_prop.to_export
+        if get_current_coll(context):
+            return get_current_coll(context).road_node_prop.to_export
+        else:
+            return False
 
 
 class RShapeEditOperator:
@@ -151,6 +154,8 @@ class RShapeEditOperator:
     @classmethod
     def poll(cls, context):
         if not context.selected_objects:
+            return False
+        if not get_current_coll(context):
             return False
         else:
             this_col = get_current_coll(context)
@@ -239,7 +244,10 @@ class RoadSeparate(bpy.types.Operator, RShapeEditOperator):
 
     @classmethod
     def poll(cls, context):
-        return not all([x.select_get() for x in get_current_coll(context).objects]) and RShapeEditOperator.poll(context)
+        if get_current_coll(context):
+            return not all([x.select_get() for x in get_current_coll(context).objects]) and RShapeEditOperator.poll(context)
+        else:
+            return False
 
     def execute(self, context):
         new_obj = list(context.selected_objects)
@@ -261,8 +269,10 @@ class RShapeAddOperator:
 
     @classmethod
     def poll(cls, context):
-        return get_current_coll(context).road_node_prop.to_export
-
+        if get_current_coll(context):
+            return get_current_coll(context).road_node_prop.to_export
+        else:
+            return False
 
 class RShapeSelect(bpy.types.Operator):
     """Select/Deselect all road shapes of current road"""
@@ -272,7 +282,10 @@ class RShapeSelect(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return get_current_coll(context).road_node_prop.to_export and get_current_coll(context).objects
+        if not get_current_coll(context):
+            return False
+        else:
+            return get_current_coll(context).road_node_prop.to_export and get_current_coll(context).objects
 
     def execute(self, context):
         if all([x.select_get() for x in get_current_coll(context).objects]):
@@ -529,7 +542,7 @@ class RShapeFlip(bpy.types.Operator, RShapeEditOperator):
 class RoadModule:
     @classmethod
     def poll(cls, context):
-        return context.preferences.addons[__name__].preferences.RoadsEnabled
+        return context.preferences.addons[__package__].preferences.RoadsEnabled
 
 
 class MDE_PT_RoadFileManagement(bpy.types.Panel, RoadModule):

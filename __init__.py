@@ -65,7 +65,7 @@ class DummyOP(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        print(__name__)
+        print(__package__)
         return {'FINISHED'}
 
 

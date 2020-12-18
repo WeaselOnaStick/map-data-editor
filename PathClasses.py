@@ -140,7 +140,7 @@ class PathModule:
 
     @classmethod
     def poll(cls, context):
-        return context.preferences.addons["map_data_editor"].preferences.PathsEnabled
+        return context.preferences.addons[__name__].preferences.PathsEnabled
 
 
 class MDE_PT_PathFileManagement(bpy.types.Panel, PathModule):

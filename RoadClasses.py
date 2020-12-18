@@ -529,7 +529,7 @@ class RShapeFlip(bpy.types.Operator, RShapeEditOperator):
 class RoadModule:
     @classmethod
     def poll(cls, context):
-        return context.preferences.addons["map_data_editor"].preferences.RoadsEnabled
+        return context.preferences.addons[__name__].preferences.RoadsEnabled
 
 
 class MDE_PT_RoadFileManagement(bpy.types.Panel, RoadModule):

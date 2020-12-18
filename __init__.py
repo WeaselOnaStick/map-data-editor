@@ -65,8 +65,7 @@ class DummyOP(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        fp = r"d:\GAMES\The Simpsons Hit And Run\stuff\dev\Map Data Editor\exports\level1.p3dxml"
-        LocatorManager.export_locators(context.selected_objects, fp)
+        print(__name__)
         return {'FINISHED'}
 
 

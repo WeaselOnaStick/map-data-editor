@@ -142,7 +142,7 @@ class FenceModule:
 
     @classmethod
     def poll(cls, context):
-        return context.preferences.addons["map_data_editor"].preferences.FencesEnabled
+        return context.preferences.addons[__name__].preferences.FencesEnabled
 
 
 class MDE_PT_FenceFileManagement(bpy.types.Panel, FenceModule):

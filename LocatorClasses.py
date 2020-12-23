@@ -18,7 +18,7 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
         name='Locator Type',
         description=''
     )
-    # Type 0 support
+    # Type 0 (EVENT) support
     event: bpy.props.IntProperty(
         name='Event',
         description=LM.event_description,
@@ -31,7 +31,7 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
         name='Parameter',
         min=0
     )
-    # Type 3 support
+    # Type 3 (CAR) Support
     parked_car: bpy.props.BoolProperty(
         name="ParkedCar",
     )
@@ -39,7 +39,12 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
         name="FreeCar",
         description="Leave empty to disable"
     )
-    # Type 9 support
+    # Type 5 (ZONE) Support
+    dynaload_string: bpy.props.StringProperty(
+        name="Dyna Load Data",
+        description="These strings define instructions to load and unload zones of the world (file names relative to the \"art\" folder)"
+    )
+    # Type 9 (ACTION) Support
     action_type: bpy.props.EnumProperty(
         items=LM.action_types,
         name='Action Event Type'
@@ -50,7 +55,7 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
     action_unknown2: bpy.props.StringProperty(
         name="Unknown 2"
     )
-    # Type 12 support
+    # Type 12 (CAM) Support
     cam_follow_player: bpy.props.BoolProperty(
         name="Follow Player"
     )
@@ -185,6 +190,7 @@ class MDE_PT_LocatorFileManagement(bpy.types.Panel, LocatorModule):
 
 
 class MDE_PT_Locators(bpy.types.Panel, LocatorModule):
+    #TODO locator Matrix support: custom matrix object checkbox?
     bl_label = 'Locators'
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
@@ -207,19 +213,31 @@ class MDE_PT_Locators(bpy.types.Panel, LocatorModule):
             col.operator("object.mde_op_vol_create_cube", icon='CUBE')
             box = layout.box()
             box.prop(locator.locator_prop, "loctype")
+
+            # Type 0 (EVENT) support
             if locator.locator_prop.loctype == 'EVENT':
                 box.prop(locator.locator_prop, "event")
                 box.prop(locator.locator_prop, "has_parameter")
                 grd = box.grid_flow()
                 grd.enabled = locator.locator_prop.has_parameter
                 grd.prop(locator.locator_prop, "parameter")
+
+            # Type 3 (CAR) Support
             if locator.locator_prop.loctype == 'CAR':
                 box.prop(locator.locator_prop, "free_car")
                 box.prop(locator.locator_prop, "parked_car")
+
+            # Type 5 (ZONE) Support
+            if locator.locator_prop.loctype == 'ZONE':
+                box.prop(locator.locator_prop, "dynaload_string")
+
+            # Type 9 (ACTION) Support
             if locator.locator_prop.loctype == 'ACTION':
                 box.prop(locator.locator_prop, "action_type")
                 box.prop(locator.locator_prop, "action_unknown")
                 box.prop(locator.locator_prop, "action_unknown2")
+                
+            #TODO Type 12 (CAM) Support
             if locator.locator_prop.loctype == 'CAM':
                 box.prop(locator.locator_prop, "cam_dat")
                 if locator.locator_prop.cam_dat:

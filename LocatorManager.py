@@ -105,32 +105,37 @@ def locator_create_cam():
 
 def import_locators(filepath):
     # TODO import_locators add sort option by type?
+    #TODO locator Matrix support: import matrix as separate empty obj
     root = terra_read(filepath)
     for locator in find_chunks(root, LOC):
         locname = find_val(locator, "Name")
         loctype = LTD[int(find_val(locator, "LocatorType"))]
         locpos = find_xyz(locator, "Position")
-        loc_obj = locator_create(
-            name=locname, location=locpos, loctype=loctype)
-        # EVENT SUPPORT
+        loc_obj = locator_create(name=locname, location=locpos, loctype=loctype)
+        # Type 0 (EVENT) support
         if loctype == 'EVENT':
             loc_data = locator.find("*[@Name='Data']")
             loc_obj.locator_prop.event = int(find_val(loc_data, "Unknown"))
             if find_val(loc_data, "Unknown2"):
                 loc_obj.locator_prop.has_parameter = True
-                loc_obj.locator_prop.parameter = int(
-                    find_val(loc_data, "Unknown2"))
-        # CAR SUPPORT
+                loc_obj.locator_prop.parameter = int(find_val(loc_data, "Unknown2"))
+
+        # Type 3 (CAR) Support
         if loctype == 'CAR':
             loc_data = locator.find("*[@Name='Data']")
-            loc_obj.rotation_euler[2] = radians(
-                float(find_val(loc_data, "Rotation")))
+            loc_obj.rotation_euler[2] = radians(float(find_val(loc_data, "Rotation")))
             if "Value" in loc_data.find("*[@Name='ParkedCar']").attrib:
-                loc_obj.locator_prop.parked_car = bool(
-                    int(find_val(loc_data, "ParkedCar")))
+                loc_obj.locator_prop.parked_car = bool(int(find_val(loc_data, "ParkedCar")))
             if "Value" in loc_data.find("*[@Name='FreeCar']").attrib:
                 loc_obj.locator_prop.free_car = find_val(loc_data, "FreeCar")
-        # ACTION SUPPORT
+
+        #TODO Type 5 (ZONE) Support
+        if loctype == 'ZONE':
+            loc_data = locator.find("*[@Name='Data']")
+            loc_obj.locator_prop.dynaload_string = find_val(loc_data, "DynaLoadData")
+
+        
+        # Type 9 (ACTION) Support
         if loctype == 'ACTION':
             loc_data = locator.findall("*[@Name='Data']/*[@Name='Unknown']/*")
             print(f"found action data! {list(loc_data)}")
@@ -141,9 +146,9 @@ def import_locators(filepath):
             loc_obj.rotation_euler = find_locrot_LOM(locator)[1]
         for volume in find_volumes(locator):
             volume_create(parent=loc_obj, **volume)
-        # CAM SUPPORT
+
+        #TODO Type 12 (CAM) Support
         if loctype == 'CAM':
-            # TODO Type 12 Cam chunk import support
             pass
 
 
@@ -153,6 +158,7 @@ def invalid_locators(objs):
 
 
 def export_locators(objs, filepath):
+    #TODO locator Matrix support: export matrix obj
     root = p3d_et()
     print(f"Got input: {objs}")
     input_objs = []
@@ -175,20 +181,33 @@ def export_locators(objs, filepath):
             loc_mat = write_chunk(locator, LOM)
             write_locrot_to_mat(loc_mat, loc_obj)
         loc_data = ET.SubElement(locator, "Value", {"Name": "Data"})
-        # Type 0 support
+        # Type 0 (EVENT) support
         if loc_obj.locator_prop.loctype == 'EVENT':
             write_val(loc_data, "Unknown", loc_obj.locator_prop.event)
             if loc_obj.locator_prop.has_parameter:
                 write_val(loc_data, "Unknown2", loc_obj.locator_prop.parameter)
-        # Type 3 Support
+
+        # Type 3 (CAR) Support
         if loc_obj.locator_prop.loctype == 'CAR':
-            write_val(loc_data, "Rotation", degrees(
-                loc_obj.matrix_world.to_euler()[2]))
-            write_val(loc_data, "ParkedCar", int(
-                loc_obj.locator_prop.parked_car))
+            write_val(loc_data, "Rotation", degrees(loc_obj.matrix_world.to_euler()[2]))
+            write_val(loc_data, "ParkedCar", int(loc_obj.locator_prop.parked_car))
             if loc_obj.locator_prop.free_car:
                 write_val(loc_data, "FreeCar", loc_obj.locator_prop.free_car)
-        # Type 9 Support
+
+        #TODO Type 5 (ZONE) Support
+        if loc_obj.locator_prop.loctype == 'ZONE':
+            write_val(loc_data, "DynaLoadData", loc_obj.locator_prop.dynaload_string)
+
+        #TODO Type 7 (INTERIOR) Support
+        if loc_obj.locator_prop.loctype == 'INTERIOR':
+            pass
+
+        #TODO Type 8 (DIRECTION) Support
+        if loc_obj.locator_prop.loctype == 'DIRECTION':
+            pass
+
+        # Type 9 (ACTION) Support
+        #TODO Type 9 Support: Locator Matrix support
         if loc_obj.locator_prop.loctype == 'ACTION':
             write_val(loc_data, "Unknown2", 3)
             write_val(loc_data, "Unknown3", 1)
@@ -199,7 +218,8 @@ def export_locators(objs, filepath):
                 loc_obj.locator_prop.action_unknown2 = loc_obj.name
             ET.SubElement(un_data, "Item", {"Value": loc_obj.locator_prop.action_unknown})
             ET.SubElement(un_data, "Item", {"Value": loc_obj.locator_prop.action_unknown2})
-        # Type 12 Support
+
+        # Type 12 (CAM) Support
         if loc_obj.locator_prop.loctype == 'CAM':
             write_val(loc_data, "Unknown", 0.04)
             write_val(loc_data, "Unknown2", 0.04)
@@ -209,4 +229,8 @@ def export_locators(objs, filepath):
             write_xyz(loc_data, "TargetPosition", 0, 0, 0)
             write_val(loc_data, "FOV", degrees(loc_obj.locator_prop.cam_dat.angle))
             write_val(loc_data, "FollowPlayer", int(loc_obj.locator_prop.cam_follow_player))
+
+        #TODO Type 13 (PED) Support
+        if loc_obj.locator_prop.loctype == 'PED':
+            pass
     write_ET(root, filepath)

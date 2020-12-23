@@ -230,6 +230,7 @@ class MDE_PT_Locators(bpy.types.Panel, LocatorModule):
             # Type 5 (ZONE) Support
             if locator.locator_prop.loctype == 'ZONE':
                 box.prop(locator.locator_prop, "dynaload_string")
+                box.operator("wm.url_open", text="Dyna Load Data Strings", icon='QUESTION').url="https://docs.donutteam.com/docs/hitandrun/misc/dyna-load-data"
 
             # Type 9 (ACTION) Support
             if locator.locator_prop.loctype == 'ACTION':

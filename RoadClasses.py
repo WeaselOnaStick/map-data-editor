@@ -63,6 +63,7 @@ class FileImportRoads(bpy.types.Operator, ImportHelper):
 
 
 class FileExportRoadsAndIntersects(bpy.types.Operator, ExportHelper):
+    #TODO "Visible only" checkbox
     bl_idname = 'export_scene.roads_p3dxml'
     bl_label = 'Export Roads...'
     filename_ext = '.p3dxml'
@@ -101,6 +102,7 @@ class FileExportRoadsAndIntersects(bpy.types.Operator, ExportHelper):
             road_cols = [x for x in bpy.data.collections if x.road_node_prop.to_export]
             inter_objs = [x for x in bpy.data.collections['Intersections'].objects]
         print(f"SELECTED ROADS: {road_cols}, INTERSECTS: {inter_objs}")
+        
         if self.safe_check:
             if RoadManager.invalid_roads(road_cols, inter_objs, self.connect_margin):
                 self.report({'ERROR'}, RoadManager.invalid_roads(

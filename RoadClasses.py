@@ -63,6 +63,7 @@ class FileImportRoads(bpy.types.Operator, ImportHelper):
 
 
 class FileExportRoadsAndIntersects(bpy.types.Operator, ExportHelper):
+    #TODO Export CustomLimits.ini limits
     #TODO "Visible only" checkbox
     bl_idname = 'export_scene.roads_p3dxml'
     bl_label = 'Export Roads...'

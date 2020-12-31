@@ -409,7 +409,7 @@ class RShapePrepareCurve(bpy.types.Operator, RShapeAddOperator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        RoadManager.misc_create_bezier(context)
+        RoadManager.misc_create_bezier(context, get_current_coll(context))
         return {'FINISHED'}
 
 

@@ -120,10 +120,10 @@ def rs_create_from_bezier(context):
     bpy.data.objects.remove(leftover_mesh)
 
 
-def misc_create_bezier(context):
-    curv = bpy.data.curves.new('BezierRoadShape', 'CURVE')
-    curv.dimensions = '3D'
-    spline = curv.splines.new('BEZIER')
+def misc_create_bezier(context, collection):
+    curve = bpy.data.curves.new('BezierRoadShape', 'CURVE')
+    curve.dimensions = '3D'
+    spline = curve.splines.new('BEZIER')
     spline.bezier_points.add(1)
     bzp = spline.bezier_points
     bzp[0].handle_left = Vector((-7.1884, -12.703, 0.0))
@@ -134,8 +134,9 @@ def misc_create_bezier(context):
     bzp[1].co = Vector((0.0, 0.0, 0.0))
     bzp[1].handle_right = Vector((-0.0, 4.1146, 0.0))
     bzp[1].tilt = pi / 2
-    curv.extrude = 3
-    curve_obj = add_object(context, curv)
+    curve.extrude = 3
+    curve_obj = bpy.data.objects.new('BezierRoadShape', curve)
+    collection.objects.link(curve_obj)
     curve_obj.display_type = 'WIRE'
     curve_obj.show_in_front = True
 

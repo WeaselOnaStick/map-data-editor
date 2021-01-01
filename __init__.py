@@ -1,4 +1,5 @@
 from math import *
+from mathutils import Vector
 import bpy
 import bpy_extras.object_utils
 from bpy_extras.io_utils import ExportHelper, ImportHelper
@@ -8,9 +9,12 @@ from . import RoadClasses
 from . import PathClasses
 from . import FenceClasses
 from . import LocatorClasses
+from . import TreeClasses
 from . import utils_p3dxml
 from . import LocatorManager
 from . import utils_bpy
+
+from . import TreeManager as TM
 import inspect
 bl_info = {'name': "WMDE - Weasel's Map Data Editor",
            'author': 'Weasel On A Stick',
@@ -33,6 +37,8 @@ class WMDE_Preferences(bpy.types.AddonPreferences):
                                           default=True)
     LocatorsEnabled: bpy.props.BoolProperty(name='Enable Locators Module (WIP)',
                                             default=True)
+    MiscEnabled: bpy.props.BoolProperty(name='Enable Tree Module (WIP)',
+                                            default=True)
 
     def draw(self, context):
         layout = self.layout
@@ -41,6 +47,7 @@ class WMDE_Preferences(bpy.types.AddonPreferences):
         col.prop(self, 'PathsEnabled')
         col.prop(self, 'FencesEnabled')
         col.prop(self, 'LocatorsEnabled')
+        col.prop(self, 'MiscEnabled')
 
 
 class FileSplitTerra(bpy.types.Operator, ImportHelper):
@@ -65,12 +72,12 @@ class DummyOP(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        print(__package__)
+        
         return {'FINISHED'}
 
 
 classes = [WMDE_Preferences, FileSplitTerra, DummyOP]
-subclasses = [RoadClasses, PathClasses, FenceClasses, LocatorClasses]
+subclasses = [RoadClasses, PathClasses, FenceClasses, LocatorClasses, TreeClasses]
 parents = [bpy.types.Operator, bpy.types.PropertyGroup, bpy.types.Panel]
 #TODO change classes collection for readability
 for cls in subclasses:

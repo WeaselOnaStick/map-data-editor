@@ -160,7 +160,6 @@ def invalid_locators(objs):
 def export_locators(objs, filepath):
     #TODO locator Matrix support: export matrix obj
     root = p3d_et()
-    print(f"Got input: {objs}")
     input_objs = []
     input_objs = [
         loc_obj for loc_obj in objs if loc_obj.locator_prop.is_locator]

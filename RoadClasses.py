@@ -311,7 +311,7 @@ class RShapeUpdate(bpy.types.Operator, RShapeEditOperator):
         return context.mode == 'OBJECT'
 
     def execute(self, context):
-        if context.active_object.type != 'MESH' or (len(context.active_object.users_collection) > 1) or (not context.active_object.users_collection[0].road_prop.to_export):
+        if context.active_object.type != 'MESH' or (len(context.active_object.users_collection) > 1) or (not context.active_object.users_collection[0].road_node_prop.to_export):
             self.report({'ERROR'}, "Please change active object to a valid road shape object")
             return {'CANCELLED'}
         objects = context.selected_objects

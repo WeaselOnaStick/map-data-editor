@@ -306,20 +306,23 @@ class RShapeUpdate(bpy.types.Operator, RShapeEditOperator):
     bl_idname = 'object.road_shape_update'
     bl_label = 'Update Road Shapes'
 
+    @classmethod
+    def poll(cls, context):
+        return context.mode == 'OBJECT'
+
     def execute(self, context):
-        og_mode = str(context.mode)
-        if og_mode != 'OBJECT':
-            bpy.ops.object.mode_set()
-        bpy.ops.object.transform_apply()
+        if context.active_object.type != 'MESH' or (len(context.active_object.users_collection) > 1) or (not context.active_object.users_collection[0].road_prop.to_export):
+            self.report({'ERROR'}, "Please change active object to a valid road shape object")
+            return {'CANCELLED'}
         objects = context.selected_objects
+        for obj in objects:
+            if obj.type != 'MESH': obj.select_set(False)
+        bpy.ops.object.transform_apply()
         for obj in objects:
             if obj.type != 'MESH':
                 continue
             else:
                 RoadManager.rs_edit_upd(obj)
-
-        if og_mode != 'OBJECT':
-            bpy.ops.object.mode_set(mode=og_mode)
         return {'FINISHED'}
 
 

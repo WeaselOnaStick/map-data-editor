@@ -14,7 +14,6 @@ from . import utils_p3dxml
 from . import LocatorManager
 from . import utils_bpy
 
-from . import TreeManager as TM
 import inspect
 bl_info = {'name': "WMDE - Weasel's Map Data Editor",
            'author': 'Weasel On A Stick',
@@ -72,7 +71,10 @@ class DummyOP(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+        from . import TreeManager as TM
         
+        #TM.snap_int_to_divisible
+        bpy.ops.export_scene.grid_tree(filepath = r'd:\GAMES\The Simpsons Hit And Run\stuff\dev\Map Data Editor\test site\test_tree.p3dxml')
         return {'FINISHED'}
 
 

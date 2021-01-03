@@ -4,25 +4,31 @@ import bpy
 from .utils_p3dxml import *
 import re
 
-def point_in_bound(a, bound_bl : Vector, bound_ur : Vector, ignore_z = True):
-    if a.x < bound_bl.x: return False
-    if a.y < bound_bl.y: return False
-    if a.x > bound_ur.x: return False
-    if a.y > bound_ur.y: return False
+def point_in_bound(a : Vector, bound_bl : Vector, bound_ur : Vector, ignore_z = True):
+    if any([
+        a.x < bound_bl.x, 
+        a.y < bound_bl.y, 
+        a.x > bound_ur.x, 
+        a.y > bound_ur.y,
+        ]):
+            return False
     if not ignore_z:
-        if a.z < bound_bl.z: return False
-        if a.z > bound_ur.z: return False
+        if any([
+        a.z < bound_bl.z, 
+        a.z > bound_ur.z,
+        ]):
+            return False
     return True
 
-def snap_int_to_divisible(x, a, up : bool = True):
+def snap_int_to_divisible(x : Vector, a, up = True):
     if x % a != 0:
         x = x - (x % a) + a*int(up)
     return x
 
-def snap_vector_to_divisible(x : Vector, a):
+def snap_vector_to_divisible(x : Vector, a, up = True):
     x = x.copy()
     for i in range(len(x)):
-        x[i] = snap_int_to_divisible(x[i], 20)
+        x[i] = snap_int_to_divisible(x[i], a, up)
         # if x[i] % a != 0:
         #     x[i] = x[i] - (x[i] % a) + a
     return x
@@ -51,11 +57,11 @@ class TreeNode:
         self.split_axis = axis
         self.split_pos = pos
         if axis == 0:
-            self.lc.corner_ur = Vector((pos,self.corner_ur.y,0))
-            self.rc.corner_bl = Vector((pos,self.corner_bl.y,0))
+            self.lc.corner_ur = Vector((pos,self.corner_ur.y,self.corner_ur.z))
+            self.rc.corner_bl = Vector((pos,self.corner_bl.y,self.corner_bl.z))
         if axis == 1:
-            self.lc.corner_bl = Vector((self.corner_bl.x,pos,0))
-            self.rc.corner_ur = Vector((self.corner_ur.x,pos,0))
+            self.lc.corner_ur = Vector((self.corner_ur.x,pos,self.corner_ur.z))
+            self.rc.corner_bl = Vector((self.corner_bl.x,pos,self.corner_bl.z))
         return self.lc,self.rc
 
     def children_count(self):
@@ -109,15 +115,15 @@ class Tree:
 def grid_generate(gridsize = 20, marker_set = []):
     treemin = Vector((min([x[0] for x in marker_set]),min([x[1] for x in marker_set]),min([x[2] for x in marker_set])))
     treemax = Vector((max([x[0] for x in marker_set]),max([x[1] for x in marker_set]),max([x[2] for x in marker_set])))
-    treemin = snap_vector_to_divisible(treemin, gridsize)
-    treemax = snap_vector_to_divisible(treemax, gridsize)
+    treemin = snap_vector_to_divisible(treemin, gridsize, up = False)
+    treemax = snap_vector_to_divisible(treemax, gridsize, up = True)
 
     def QuadTree(treenode : TreeNode, marker_set):
         if not treenode:
             return
         if (treenode.dim()[0] <= gridsize) and (treenode.dim()[1] <= gridsize):
             return
-        if not (any([point_in_bound(x, treenode.corner_bl, treenode.corner_ur, True) for x in marker_set])):
+        if not (any([point_in_bound(x, treenode.corner_bl, treenode.corner_ur, ignore_z=True) for x in marker_set])):
             return
         if treenode.dim()[0] <= gridsize:
             a,b = treenode.split(1, snap_int_to_divisible(treenode.corner_bl[1] + treenode.dim()[1]/2, gridsize, False))

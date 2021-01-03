@@ -62,7 +62,7 @@ class GridTreeExport(bpy.types.Operator, ExportHelper):
     )
 
     def execute(self, context):
-        if "IntersectMarkers" not in context.scene.collection.children:
+        if "IntersectMarkers" not in context.scene.collection.children or not context.scene.collection.children["IntersectMarkers"].objects:
             self.report({'ERROR'}, "No Intersect Markers found!")
             return {"CANCELLED"}
         t_start = time()
@@ -95,8 +95,6 @@ class MDE_PT_TreeFileManagment(bpy.types.Panel, MiscModule):
 
     def draw(self, context):
         layout = self.layout
-        #layout.operator('import_scene.tree_p3dxml', icon='IMPORT')
-        #layout.operator('export_scene.tree_p3dxml', icon='EXPORT')
         layout.operator('import_scene.intersect_points', icon='IMPORT')
         layout.operator('export_scene.grid_tree', icon='EXPORT')
         #layout.operator('object.dummy', icon='MONKEY')

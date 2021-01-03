@@ -102,7 +102,7 @@ class FileExportRoadsAndIntersects(bpy.types.Operator, ExportHelper):
         else:
             road_cols = [x for x in bpy.data.collections if x.road_node_prop.to_export]
             inter_objs = [x for x in bpy.data.collections['Intersections'].objects]
-        print(f"SELECTED ROADS: {road_cols}, INTERSECTS: {inter_objs}")
+        #print(f"SELECTED ROADS: {road_cols}, INTERSECTS: {inter_objs}")
         
         if self.safe_check:
             if RoadManager.invalid_roads(road_cols, inter_objs, self.connect_margin):
@@ -121,20 +121,37 @@ class IntersectCreate(bpy.types.Operator):
     bl_idname = 'object.intersect_create'
     bl_label = 'Create an intersection'
     bl_options = {'REGISTER', 'UNDO'}
-    name: bpy.props.StringProperty(name='Intersection Name',
-                                   default='wzIntersection')
-    radius: bpy.props.FloatProperty(description='Radius of the intersection',
-                                    name='Radius',
-                                    min=0,
-                                    default=3)
-    road_beh: bpy.props.IntProperty(description="3 - traffic doesn't stop\n1 - traffic stops before going through (emulates irl traffic lights)\n0 - used primarily in bonus game tracks\n2,4 - unknown",
-                                    name='Road behaviour',
-                                    min=0,
-                                    max=4,
-                                    default=1)
+    name: bpy.props.StringProperty(
+        name='Intersection Name',
+        default='wzIntersection',
+        )
+    radius: bpy.props.FloatProperty(
+        description='Radius of the intersection',
+        name='Radius',
+        min=0,
+        default=3,
+        )
+    road_beh: bpy.props.IntProperty(
+        description="3 - traffic doesn't stop\n1 - traffic stops before going through (emulates irl traffic lights)\n0 - used primarily in bonus game tracks\n2,4 - unknown",
+        name='Road behaviour',
+        min=0,
+        max=4,
+        default=1,
+        )
+    location: bpy.props.FloatVectorProperty(
+        name='Location',
+        subtype='XYZ',
+        unit='LENGTH',
+        options={'HIDDEN'}
+        )
+
+    
+    def invoke(self, context, event):
+        self.location = context.scene.cursor.location
+        return self.execute(context)
 
     def execute(self, context):
-        RoadManager.inter_create(self.name, context.scene.cursor.location,
+        RoadManager.inter_create(self.name, self.location,
                                  self.radius, self.road_beh)
         return {'FINISHED'}
 

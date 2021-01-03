@@ -88,28 +88,32 @@ class PathCreateCircular(bpy.types.Operator):
         description='Radius of the curve',
         name='Radius',
         min=0,
-        default=8,)
+        default=8,
+        )
     resolution: bpy.props.IntProperty(
         description='Amount of spline points to generate',
         name='Resolution',
         min=2,
         soft_max=20,
-        default=6,)
+        default=6,
+        )
     offset: bpy.props.FloatVectorProperty(
         name='Offset',
         subtype='XYZ',
-        unit='LENGTH')
+        unit='LENGTH',
+        )
     rotation: bpy.props.FloatVectorProperty(
         name='Rotation',
         subtype='EULER',
-        unit='ROTATION'
-    )
+        unit='ROTATION',
+        )
     scale: bpy.props.FloatVectorProperty(
         name='Scale',
         subtype='XYZ',
         min=0.01,
         default=(1, 1),
-        size=2,)
+        size=2,
+        )
 
     def execute(self, context):
         path_create_circular(cursor=context.scene.cursor, kwargs=self.as_keywords())

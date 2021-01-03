@@ -5,6 +5,7 @@ from .utils_p3dxml import *
 import re
 
 def point_in_bound(a : Vector, bound_bl : Vector, bound_ur : Vector, ignore_z = True):
+    #TODO change to "point_in_node" made specifically for
     if any([
         a.x < bound_bl.x, 
         a.y < bound_bl.y, 
@@ -29,8 +30,6 @@ def snap_vector_to_divisible(x : Vector, a, up = True):
     x = x.copy()
     for i in range(len(x)):
         x[i] = snap_int_to_divisible(x[i], a, up)
-        # if x[i] % a != 0:
-        #     x[i] = x[i] - (x[i] % a) + a
     return x
 
 class TreeNode:
@@ -71,6 +70,9 @@ class TreeNode:
         if self.rc:
             x += self.rc.children_count()
         return x
+    
+    def contains_vector(a : Vector):
+        pass
 
     def dim(self):
         return (self.corner_ur-self.corner_bl).x,(self.corner_ur-self.corner_bl).y,(self.corner_ur-self.corner_bl).z
@@ -125,18 +127,32 @@ def grid_generate(gridsize = 20, marker_set = []):
             return
         if not (any([point_in_bound(x, treenode.corner_bl, treenode.corner_ur, ignore_z=True) for x in marker_set])):
             return
-        if treenode.dim()[0] <= gridsize:
-            a,b = treenode.split(1, snap_int_to_divisible(treenode.corner_bl[1] + treenode.dim()[1]/2, gridsize, False))
+        
+        #Chopping rectangles with 1 side ~= gridsize
+        
+        if (treenode.dim()[0] <= gridsize) != (treenode.dim()[1] <= gridsize):
+            if treenode.dim()[0] <= gridsize : shortcut = 1 
+            if treenode.dim()[1] <= gridsize : shortcut = 0 
+
+            a,b = treenode.split(shortcut, snap_int_to_divisible(treenode.corner_bl[shortcut] + treenode.dim()[shortcut]/2, gridsize, False))
             QuadTree(a, marker_set)
             QuadTree(b, marker_set)
             return
-        if treenode.dim()[1] <= gridsize:
-            a,b = treenode.split(0, snap_int_to_divisible(treenode.corner_bl[0] + treenode.dim()[0]/2, gridsize, False))
-            QuadTree(a, marker_set)
-            QuadTree(b, marker_set)
-            return
+
+        # if treenode.dim()[0] <= gridsize:
+        #     a,b = treenode.split(1, snap_int_to_divisible(treenode.corner_bl[1] + treenode.dim()[1]/2, gridsize, False))
+        #     QuadTree(a, marker_set)
+        #     QuadTree(b, marker_set)
+        #     return
+        # if treenode.dim()[1] <= gridsize:
+        #     a,b = treenode.split(0, snap_int_to_divisible(treenode.corner_bl[0] + treenode.dim()[0]/2, gridsize, False))
+        #     QuadTree(a, marker_set)
+        #     QuadTree(b, marker_set)
+        #     return
+        
+        #Actual QuadTree magic
         a,b = treenode.split(0, snap_int_to_divisible(treenode.corner_bl[0] + (treenode.dim()[0]/2.),gridsize, False))    
-        if a.dim()[1] > gridsize:
+        if a.dim()[1] > gridsize and any([point_in_bound(x, a.corner_bl, a.corner_ur, ignore_z=True) for x in marker_set]):
             
             aa,ab = a.split(1, snap_int_to_divisible(a.corner_bl[1] + (a.dim()[1]/2.), gridsize, False))
             QuadTree(aa, marker_set)
@@ -144,7 +160,7 @@ def grid_generate(gridsize = 20, marker_set = []):
         else:
             QuadTree(a, marker_set)
 
-        if b.dim()[1] > gridsize:
+        if b.dim()[1] > gridsize and any([point_in_bound(x, b.corner_bl, b.corner_ur, ignore_z=True) for x in marker_set]):
             ba,bb = b.split(1, snap_int_to_divisible(b.corner_bl[1] + (b.dim()[1]/2.), gridsize, False))
             QuadTree(ba, marker_set)
             QuadTree(bb, marker_set)
@@ -154,9 +170,9 @@ def grid_generate(gridsize = 20, marker_set = []):
     T = Tree(treemin, treemax)
     
     QuadTree(T.root, marker_set)
-    f = open(r"d:\GAMES\The Simpsons Hit And Run\stuff\dev\Map Data Editor\test.txt", "w")
-    f.write(str(T))
-    f.close()
+    # f = open(r"d:\GAMES\The Simpsons Hit And Run\stuff\dev\Map Data Editor\test.txt", "w")
+    # f.write(str(T))
+    # f.close()
     return T
 
 def import_tree(filepath):

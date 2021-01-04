@@ -138,34 +138,32 @@ def grid_generate(gridsize = 20, marker_set = []):
             QuadTree(a, marker_set)
             QuadTree(b, marker_set)
             return
-
-        # if treenode.dim()[0] <= gridsize:
-        #     a,b = treenode.split(1, snap_int_to_divisible(treenode.corner_bl[1] + treenode.dim()[1]/2, gridsize, False))
-        #     QuadTree(a, marker_set)
-        #     QuadTree(b, marker_set)
-        #     return
-        # if treenode.dim()[1] <= gridsize:
-        #     a,b = treenode.split(0, snap_int_to_divisible(treenode.corner_bl[0] + treenode.dim()[0]/2, gridsize, False))
-        #     QuadTree(a, marker_set)
-        #     QuadTree(b, marker_set)
-        #     return
         
         #Actual QuadTree magic
-        a,b = treenode.split(0, snap_int_to_divisible(treenode.corner_bl[0] + (treenode.dim()[0]/2.),gridsize, False))    
-        if a.dim()[1] > gridsize and any([point_in_bound(x, a.corner_bl, a.corner_ur, ignore_z=True) for x in marker_set]):
-            
-            aa,ab = a.split(1, snap_int_to_divisible(a.corner_bl[1] + (a.dim()[1]/2.), gridsize, False))
-            QuadTree(aa, marker_set)
-            QuadTree(ab, marker_set)
-        else:
-            QuadTree(a, marker_set)
+        a,b = treenode.split(0, snap_int_to_divisible(treenode.corner_bl[0] + (treenode.dim()[0]/2.),gridsize, False))
+        marker_set_a = [m for m in marker_set if m.x<=treenode.split_pos]    
+        marker_set_b = [m for m in marker_set if m.x>treenode.split_pos]    
+        if a.dim()[1] > gridsize and any([point_in_bound(x, a.corner_bl, a.corner_ur, ignore_z=True) for x in marker_set_a]):
 
-        if b.dim()[1] > gridsize and any([point_in_bound(x, b.corner_bl, b.corner_ur, ignore_z=True) for x in marker_set]):
-            ba,bb = b.split(1, snap_int_to_divisible(b.corner_bl[1] + (b.dim()[1]/2.), gridsize, False))
-            QuadTree(ba, marker_set)
-            QuadTree(bb, marker_set)
+            new_split_pos = snap_int_to_divisible(a.corner_bl[1] + (a.dim()[1]/2.), gridsize, False)
+            aa,ab = a.split(1, new_split_pos)
+            marker_set_aa = [m for m in marker_set_a if m.y<=new_split_pos]
+            marker_set_ab = [m for m in marker_set_a if m.y>new_split_pos]
+            QuadTree(aa, marker_set_aa)
+            QuadTree(ab, marker_set_ab)
         else:
-            QuadTree(b, marker_set)
+            QuadTree(a, marker_set_a)
+
+        if b.dim()[1] > gridsize and any([point_in_bound(x, b.corner_bl, b.corner_ur, ignore_z=True) for x in marker_set_b]):
+            
+            new_split_pos = snap_int_to_divisible(b.corner_bl[1] + (b.dim()[1]/2.), gridsize, False)
+            ba,bb = b.split(1, new_split_pos)
+            marker_set_ba = [m for m in marker_set_b if m.y<=new_split_pos]
+            marker_set_bb = [m for m in marker_set_b if m.y>new_split_pos]
+            QuadTree(ba, marker_set_ba)
+            QuadTree(bb, marker_set_bb)
+        else:
+            QuadTree(b, marker_set_b)
             
     T = Tree(treemin, treemax)
     

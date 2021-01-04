@@ -56,7 +56,7 @@ class GridTreeExport(bpy.types.Operator, ExportHelper):
                                           maxlen=255)
 
     grid_size: bpy.props.FloatProperty(
-        name = "(!) Grid Cell Size",
+        name = "Grid Cell Size",
         description = "Don't change unless you know what you're doing!",
         default = 20,
     )

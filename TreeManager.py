@@ -170,9 +170,6 @@ def grid_generate(gridsize = 20, marker_set = []):
     T = Tree(treemin, treemax)
     
     QuadTree(T.root, marker_set)
-    # f = open(r"d:\GAMES\The Simpsons Hit And Run\stuff\dev\Map Data Editor\test.txt", "w")
-    # f.write(str(T))
-    # f.close()
     return T
 
 def import_tree(filepath):

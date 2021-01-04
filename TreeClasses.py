@@ -66,12 +66,12 @@ class GridTreeExport(bpy.types.Operator, ExportHelper):
             self.report({'ERROR'}, "No Intersect Markers found!")
             return {"CANCELLED"}
         t_start = time()
-        t = TM.grid_generate(gridsize = self.grid_size, marker_set = [x.location for x in context.scene.collection.children["IntersectMarkers"].objects])
+        t = TM.grid_generate(marker_set = [x.location for x in context.scene.collection.children["IntersectMarkers"].objects], gridsize = self.grid_size)
         TM.export_tree(t, self.filepath)
         a = t.root.children_count()
         b = time() - t_start
-        self.report({'INFO'}, f"Finished exporting {a} Node Tree in {b:.2f} secs")
-        print(f"Finished exporting {a} Node Tree in {b:.2f} secs")
+        self.report({'INFO'}, f"Finished exporting {a} Node Tree in {b:.3f} secs")
+        print(f"Finished exporting {a} Node Tree in {b:.3f} secs")
         return {"FINISHED"}
 
 
@@ -94,6 +94,8 @@ class MDE_PT_TreeFileManagment(bpy.types.Panel, MiscModule):
         row.label(text='', icon='GRID')
 
     def draw(self, context):
+        #TODO have panel that displays current tree basic info. split grid_tree into tree *creation* and tree *export*
+        #TODO maybe add "visualize tree" operator for "fun"
         layout = self.layout
         layout.operator('import_scene.intersect_points', icon='IMPORT')
         layout.operator('export_scene.grid_tree', icon='EXPORT')

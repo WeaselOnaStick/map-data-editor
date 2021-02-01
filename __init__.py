@@ -37,7 +37,7 @@ class WMDE_Preferences(bpy.types.AddonPreferences):
                                           default=True)
     LocatorsEnabled: bpy.props.BoolProperty(name='Enable Locators Module (WIP)',
                                             default=True)
-    MiscEnabled: bpy.props.BoolProperty(name='Enable Tree Module (WIP)',
+    MiscEnabled: bpy.props.BoolProperty(name='Enable Misc Module (WIP)',
                                             default=True)
 
     def draw(self, context):

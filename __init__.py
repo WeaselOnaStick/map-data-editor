@@ -18,7 +18,7 @@ from . import utils_bpy
 import inspect
 bl_info = {'name': "WMDE - Weasel's Map Data Editor",
            'author': 'Weasel On A Stick',
-           'version': (1, 0, 1),
+           'version': (1, 0, 2),
            'blender': (2, 82, 7),
            'location': 'View3D > Sidebar > WMDE',
            'description': 'Edit SHAR map data, including: roads, paths, fences and locators',

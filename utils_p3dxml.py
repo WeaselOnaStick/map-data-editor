@@ -114,14 +114,14 @@ def write_scale_to_HalfExtent(loc, obj):
     write_xyz(loc, "HalfExtents", *obj.scale)
 
 
-def write_locrot_to_mat(loc, obj):
+def write_locrot_to_mat(loc, obj, name="Matrix"):
     obj_loc = obj.matrix_world.to_translation().copy()
     obj_loc.y, obj_loc.z = obj_loc.z, obj_loc.y
     obj_rot = obj.matrix_world.to_quaternion().copy()
     obj_rot.y, obj_rot.z = obj_rot.z, obj_rot.y
     mat = obj_rot.to_matrix().to_4x4()
     mat[3] = obj_loc.to_4d()
-    mat_el = ET.SubElement(loc, "Value", {"Name": "Matrix"})
+    mat_el = ET.SubElement(loc, "Value", {"Name": name})
     for i in range(4):
         for j in range(4):
             mat_el.attrib[f"M{i+1}{j+1}"] = str(mat[i][j])

@@ -10,6 +10,7 @@ from . import PathClasses
 from . import FenceClasses
 from . import LocatorClasses
 from . import TreeClasses
+from . import InstanceClasses
 from . import utils_p3dxml
 from . import LocatorManager
 from . import utils_bpy
@@ -75,7 +76,7 @@ class DummyOP(bpy.types.Operator):
 
 
 classes = [WMDE_Preferences, FileSplitTerra, DummyOP]
-subclasses = [RoadClasses, PathClasses, FenceClasses, LocatorClasses, TreeClasses]
+subclasses = [RoadClasses, PathClasses, FenceClasses, LocatorClasses, TreeClasses, InstanceClasses]
 parents = [bpy.types.Operator, bpy.types.PropertyGroup, bpy.types.Panel]
 #TODO change classes collection for readability
 for cls in subclasses:

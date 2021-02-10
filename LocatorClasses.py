@@ -1,6 +1,7 @@
 import bpy
 from bpy.props import *
 from bpy_extras.io_utils import ExportHelper, ImportHelper
+from mathutils import Vector
 from .utils_bpy import reminder
 from . import LocatorManager as LM
 from os import path
@@ -16,7 +17,16 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
     loctype: bpy.props.EnumProperty(
         items=LM.locator_types,
         name='Locator Type',
-        description=''
+        description='',
+    )
+    use_custom_loc_matrix: bpy.props.BoolProperty(
+        name="Custom Locator Matrix",
+        description="By default WMDE creates locator matrix as duplicate of locator. You might wanna change that depending on the locator",
+    )
+    loc_matrix: bpy.props.PointerProperty(
+        name="Locator Matrix",
+        type=bpy.types.Object,
+        description="Locator Matrix is used in different locator types differently. Current type doesn't have a description"
     )
     # Type 0 (EVENT) support
     event: bpy.props.IntProperty(
@@ -31,6 +41,11 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
         name='Parameter',
         min=0
     )
+    # Type 1 (SCRIPT) Support
+    script_string: bpy.props.StringProperty(
+        name='Unknown',
+        description='',
+    )
     # Type 3 (CAR) Support
     parked_car: bpy.props.BoolProperty(
         name="ParkedCar",
@@ -38,6 +53,16 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
     free_car: bpy.props.StringProperty(
         name="FreeCar",
         description="Leave empty to disable"
+    )
+    # Type 4 (SPLINE) support
+    loc_spline: bpy.props.PointerProperty(
+        name="Locator Spline",
+        type=bpy.types.Object,
+        description="Locator spline constrains game camera to sit on the spline and follow player"
+    )
+    loc_spline_cam_name: bpy.props.StringProperty(
+        name="Unknown",
+        description="Camera name?"
     )
     # Type 5 (ZONE) Support
     dynaload_string: bpy.props.StringProperty(
@@ -140,7 +165,7 @@ class MDE_OP_locator_create(bpy.types.Operator):
 
 class MDE_OP_volume_create_sphere(bpy.types.Operator, volume_filter):
     bl_idname = "object.mde_op_vol_create_sphere"
-    bl_label = "Create Spherical Volume"
+    bl_label = "Add Spherical Volume"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -153,7 +178,7 @@ class MDE_OP_volume_create_sphere(bpy.types.Operator, volume_filter):
 
 class MDE_OP_volume_create_cube(bpy.types.Operator, volume_filter):
     bl_idname = "object.mde_op_vol_create_cube"
-    bl_label = "Create Cuboid Volume"
+    bl_label = "Add Cuboid Volume"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -161,6 +186,62 @@ class MDE_OP_volume_create_cube(bpy.types.Operator, volume_filter):
         vol_obj = LM.volume_create(parent=get_cur_locator(context), is_rect=True, location=context.scene.cursor.location)
         context.view_layer.objects.active = vol_obj
         vol_obj.select_set(True)
+        return {'FINISHED'}
+
+
+class MDE_OP_locator_matrix_create(bpy.types.Operator):
+    bl_idname = "object.loc_matrix_create"
+    bl_label = "Create Locator Matrix"
+
+
+    def execute(self, context):
+        bpy.ops.object.select_all(action='DESELECT')
+        lm_obj = LM.locator_matrix_create(parent=get_cur_locator(context),location=context.scene.cursor.location)
+        lm_obj.select_set(True)
+        context.view_layer.objects.active = lm_obj
+        return {'FINISHED'}
+
+
+class MDE_OP_locator_matrix_delete(bpy.types.Operator):
+    bl_idname = "object.loc_matrix_delete"
+    bl_label = "Delete Locator Matrix"
+
+    def execute(self, context):
+        cur_loc = get_cur_locator(context)
+        cur_loc.select_set(True)
+        context.view_layer.objects.active = cur_loc
+        bpy.data.objects.remove(cur_loc.locator_prop.loc_matrix)
+        return {'FINISHED'}
+
+
+class MDE_OP_loc_spline_create(bpy.types.Operator):
+    bl_idname = "object.loc_spline_create"
+    bl_label = "Create Locator Spline"
+
+
+    def execute(self, context):
+        bpy.ops.object.select_all(action='DESELECT')
+        spline_obj = LM.spline_create(
+            parent=get_cur_locator(context),
+            points=[
+                context.scene.cursor.location + Vector((0,0,0)),
+                context.scene.cursor.location + Vector((1,1,0)),
+                context.scene.cursor.location + Vector((0,2,0)),
+                ])
+        spline_obj.select_set(True)
+        context.view_layer.objects.active = spline_obj
+        return {'FINISHED'}
+
+
+class MDE_OP_locator_spline_delete(bpy.types.Operator):
+    bl_idname = "object.loc_spline_delete"
+    bl_label = "Delete Locator Spline"
+
+    def execute(self, context):
+        cur_loc = get_cur_locator(context)
+        cur_loc.select_set(True)
+        context.view_layer.objects.active = cur_loc
+        bpy.data.curves.remove(cur_loc.locator_prop.loc_spline.data)
         return {'FINISHED'}
 
 
@@ -203,17 +284,41 @@ class MDE_PT_Locators(bpy.types.Panel, LocatorModule):
         row.label(text='', icon='EMPTY_AXIS')
 
     def draw(self, context):
-        #TODO Display get_cur_locator name
         layout = self.layout
-        col = layout.column_flow()
-        col.operator("object.mde_op_locator_create", icon='OBJECT_ORIGIN')
+        col = layout.column()
+        col.operator("object.mde_op_locator_create", icon='PLUS')
         locator = get_cur_locator(context)
+        col.separator(factor=1.5)
+        if not locator:
+            col.label(text=f"No Locator Selected")
         if locator:
-            col.separator(factor=1.5)
-            col.operator("object.mde_op_vol_create_sphere", icon='SPHERE')
-            col.operator("object.mde_op_vol_create_cube", icon='CUBE')
+            col.label(text=f"{locator.name}")
             box = layout.box()
-            box.prop(locator.locator_prop, "loctype")
+            row = box.row(align=True)
+            row.label(text="Locator Type:")
+            row.prop(locator.locator_prop, "loctype", text="")
+            if locator.locator_prop.loctype in ['EVENT','SCRIPT','SPLINE','ZONE','OCCLUSION','INTERIOR','ACTION','CAM','PED']:
+                #TODO flip currently active empty from sphere <-> cube
+                box.operator("object.mde_op_vol_create_sphere", icon='SPHERE')
+                box.operator("object.mde_op_vol_create_cube", icon='CUBE')
+            
+            if locator.locator_prop.loctype in ['EVENT','ACTION']:
+                matrix_box = box.box()
+                matrix_box.prop(locator.locator_prop, "use_custom_loc_matrix")
+                row = matrix_box.row(align=True)
+                row.label(text="Locator Matrix")
+                row.prop(locator.locator_prop, "loc_matrix", text="")
+                row.enabled = locator.locator_prop.use_custom_loc_matrix
+                col = matrix_box.column(align=True)
+                row = col.row()
+                row.operator("object.loc_matrix_create", icon='PLUS')
+                row.enabled = locator.locator_prop.use_custom_loc_matrix and not locator.locator_prop.loc_matrix
+                row = col.row()
+                row.operator("object.loc_matrix_delete", icon='TRASH')
+                row.enabled = bool(locator.locator_prop.loc_matrix)
+                
+            
+
 
             # Type 0 (EVENT) support
             if locator.locator_prop.loctype == 'EVENT':
@@ -223,15 +328,50 @@ class MDE_PT_Locators(bpy.types.Panel, LocatorModule):
                 grd.enabled = locator.locator_prop.has_parameter
                 grd.prop(locator.locator_prop, "parameter")
 
+            # Type 1 (SCRIPT) support
+            if locator.locator_prop.loctype == 'SCRIPT':
+                box.prop(locator.locator_prop, "script_string")
+
             # Type 3 (CAR) Support
             if locator.locator_prop.loctype == 'CAR':
                 box.prop(locator.locator_prop, "free_car")
                 box.prop(locator.locator_prop, "parked_car")
 
+            # Type 4 (SPLINE) support
+            if locator.locator_prop.loctype == 'SPLINE':
+                box = box.box()
+                row = box.row()
+                row.label(text="Spline")
+                row.prop(locator.locator_prop, "loc_spline", text="")
+                col = box.column()
+                row = col.row()
+                row.operator("object.loc_spline_create", icon='PLUS')
+                row.enabled = not locator.locator_prop.loc_spline
+                row = col.row()
+                row.operator("object.loc_spline_delete", icon='TRASH')
+                row.enabled = bool(locator.locator_prop.loc_spline)
+                row = col.row()
+                row.label(text="Unknown")
+                row.prop(locator.locator_prop, "loc_spline_cam_name", text="")
+
             # Type 5 (ZONE) Support
             if locator.locator_prop.loctype == 'ZONE':
                 box.prop(locator.locator_prop, "dynaload_string")
                 box.operator("wm.url_open", text="Dyna Load Data Strings", icon='QUESTION').url="https://docs.donutteam.com/docs/hitandrun/misc/dyna-load-data"
+
+            # Type 6 (OCCLUSION) support
+            if locator.locator_prop.loctype == 'OCCLUSION':
+                pass
+
+            
+            # Type 7 (INTERIOR) Support
+            if locator.locator_prop.loctype == 'INTERIOR':
+                pass
+
+            
+            # Type 8 (DIRECTION) Support
+            if locator.locator_prop.loctype == 'DIRECTION':
+                pass
 
             # Type 9 (ACTION) Support
             if locator.locator_prop.loctype == 'ACTION':
@@ -247,3 +387,8 @@ class MDE_PT_Locators(bpy.types.Panel, LocatorModule):
                 else:
                     box.label(text="No camera found!")
                 box.prop(locator.locator_prop, "cam_follow_player")
+
+            
+            # Type 13 (PED) Support
+            if locator.locator_prop.loctype == 'PED':
+                pass

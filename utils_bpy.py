@@ -28,4 +28,4 @@ for icon in [path.splitext(icon)[0] for icon in os.listdir(icons_dir) if path.sp
 # Access icons by filename and icon id: pcoll['{filename}'].icon_id
 
 
-reminder = 'remind weasel to add text here'
+reminder = 'TODO'

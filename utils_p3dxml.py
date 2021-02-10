@@ -21,14 +21,21 @@ def p3d_et(ver=4.4):
     return ET.Element('Pure3DFile', LucasPure3DEditorVersion=(str(ver)))
 
 
-def write_val(loc, name, value):
+def write_val(loc, name, value=None):
     """returns a value ET element with Name=name and Value=value at loc"""
-    return ET.SubElement(loc, 'Value', Name=name, Value=(str(value)))
+    if not value:
+        return ET.SubElement(loc, 'Value', Name=name)
+    else:
+        return ET.SubElement(loc, 'Value', Name=name, Value=(str(value)))
 
 
-def write_xyz(loc, name, x, y, z):
+def write_xyz(loc, name, x, y, z, element='Value'):
     """returns a value ET element with Name=name and set XYZ at loc. SWAPS Y AND Z"""
-    return ET.SubElement(loc, 'Value', Name=name, X=(str(x)), Y=(str(z)), Z=(str(y)))
+    if name:
+        ET.SubElement(loc, element, Name=name, X=(str(x)), Y=(str(z)), Z=(str(y)))
+    else:
+        ET.SubElement(loc, element, X=(str(x)), Y=(str(z)), Z=(str(y)))
+
 
 
 def write_mat_xyz(loc, name, x=0, y=0, z=0):
@@ -223,7 +230,7 @@ def write_volume(loc, vol_obj):
 
 
 def find_locrot_LOM(loc):
-    """finds a Locator Matrix (0x300000C) inside loc, gives a tuple (location, rotation(Euler XYZ))"""
+    """finds a Locator Matrix (0x300000C) inside loc, returns a tuple (location, rotation(Euler XYZ))"""
     if not find_chunks(loc, LOM):
         return
     lm = find_chunks(loc, LOM)[0]

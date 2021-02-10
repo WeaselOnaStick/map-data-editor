@@ -78,6 +78,15 @@ def volume_create(name="Volume", parent=None, is_rect=True, location=Vector(), r
         vol_obj.location = location - parent.location
     return vol_obj
 
+def locator_matrix_create(name="Locator Matrix", parent=None, location=Vector(), rotation=Euler()):
+    lm_obj = bpy.data.objects.new(name, None)
+    parent.users_collection[0].objects.link(lm_obj)
+    lm_obj.location = location - parent.location
+    lm_obj.rotation_euler = rotation
+    lm_obj.parent = parent
+    parent.locator_prop.loc_matrix = lm_obj
+    parent.locator_prop.use_custom_loc_matrix = True
+    return lm_obj
 
 def locator_create(name="Locator", location=Vector(), loctype='EVENT', volume_kwargs={}):
     if 'Locators' not in bpy.context.scene.collection.children:
@@ -98,20 +107,45 @@ def locator_create(name="Locator", location=Vector(), loctype='EVENT', volume_kw
 # TODO Type 4 and 12 cam locators here somehow?
 # - Use blender's legacy track constraint for a camera and parent a locator to it
 
+def spline_create(points : list, name="Spline", parent=None, cam_name=''):
+    curve = bpy.data.curves.new(name, 'CURVE')
+    curve.dimensions = '3D'
+    spline = curve.splines.new('NURBS')
+    spline.use_endpoint_u = True
+    spline.points.add(len(points)-1)
+    origin = points[0].copy()
+    for i,p in enumerate(points):
+        spline.points[i].co = (Vector(points[i])-Vector(origin)).to_4d()
+    spline.order_u = 3
 
-def locator_create_cam():
+
+    curve_obj = bpy.data.objects.new(name, curve)
+    parent.users_collection[0].objects.link(curve_obj)
+    curve_obj.parent = parent
+    curve_obj.location = -parent.location.copy() + origin.copy()
+    parent.locator_prop.loc_spline = curve_obj
+    parent.locator_prop.loc_spline_cam_name = cam_name
+    #bpy.data.objects.new()
+    return curve_obj
+
+def locator_create_cam(point_list):
     pass
 
 
 def import_locators(filepath):
-    # TODO import_locators add sort option by type?
+    #TODO import_locators add sort option by type?
     #TODO locator Matrix support: import matrix as separate empty obj
     root = terra_read(filepath)
-    for locator in find_chunks(root, LOC):
+    if 'Type' in root.attrib and root.attrib['Type'] == LOC:
+        loc_list = [root]
+    else:
+        loc_list = find_chunks(root, LOC)
+    for locator in loc_list:
         locname = find_val(locator, "Name")
         loctype = LTD[int(find_val(locator, "LocatorType"))]
         locpos = find_xyz(locator, "Position")
         loc_obj = locator_create(name=locname, location=locpos, loctype=loctype)
+
         # Type 0 (EVENT) support
         if loctype == 'EVENT':
             loc_data = locator.find("*[@Name='Data']")
@@ -119,6 +153,12 @@ def import_locators(filepath):
             if find_val(loc_data, "Unknown2"):
                 loc_obj.locator_prop.has_parameter = True
                 loc_obj.locator_prop.parameter = int(find_val(loc_data, "Unknown2"))
+
+        
+        # Type 1 (SCRIPT) support
+        if loctype == 'SCRIPT':
+            loc_data = locator.find("*[@Name='Data']")
+            loc_obj.locator_prop.script_string = find_val(loc_data, "Unknown")
 
         # Type 3 (CAR) Support
         if loctype == 'CAR':
@@ -129,11 +169,34 @@ def import_locators(filepath):
             if "Value" in loc_data.find("*[@Name='FreeCar']").attrib:
                 loc_obj.locator_prop.free_car = find_val(loc_data, "FreeCar")
 
-        #TODO Type 5 (ZONE) Support
+
+        # Type 4 (SPLINE) support
+        if loctype == 'SPLINE':
+            spline_chunk = find_chunks(locator, "0x3000007")[0]
+            spline_name = find_val(spline_chunk, "Name")
+            spline_cam_name = find_val(find_chunks(spline_chunk, "0x300000A")[0],"Name")
+            point_list = []
+            for i in spline_chunk.find("*[@Name='Positions']"):
+                point_list.append(item_to_vector(i))
+            spline_create(point_list,name=spline_name,parent=loc_obj, cam_name=spline_cam_name)
+
+        # Type 5 (ZONE) Support
         if loctype == 'ZONE':
             loc_data = locator.find("*[@Name='Data']")
             loc_obj.locator_prop.dynaload_string = find_val(loc_data, "DynaLoadData")
 
+        #TODO Type 6 (OCCLUSION) support
+        if loctype == 'OCCLUSION':
+            pass
+        
+        #TODO Type 7 (INTERIOR) Support
+        if loctype == 'INTERIOR':
+            pass
+        
+        #TODO Type 8 (DIRECTION) Support
+        if loctype == 'DIRECTION':
+            pass
+        
         
         # Type 9 (ACTION) Support
         if loctype == 'ACTION':
@@ -142,13 +205,25 @@ def import_locators(filepath):
             loc_obj.locator_prop.action_unknown = loc_data[0].attrib['Value']
             loc_obj.locator_prop.action_unknown2 = loc_data[1].attrib['Value']
             loc_obj.locator_prop.action_type = loc_data[2].attrib['Value']
+
+        
         if loctype in ['EVENT', 'ACTION'] and find_locrot_LOM(locator):
-            loc_obj.rotation_euler = find_locrot_LOM(locator)[1]
+            locator_matrix_create(
+                name=f"{locname} Locator Matrix",
+                parent=loc_obj,
+                location=find_locrot_LOM(locator)[0],
+                rotation=find_locrot_LOM(locator)[1],
+                )
+        
         for volume in find_volumes(locator):
             volume_create(parent=loc_obj, **volume)
 
         #TODO Type 12 (CAM) Support
         if loctype == 'CAM':
+            pass
+
+        #TODO Type 13 (PED) Support
+        if loctype == 'PED':
             pass
 
 
@@ -161,8 +236,7 @@ def export_locators(objs, filepath):
     #TODO locator Matrix support: export matrix obj
     root = p3d_et()
     input_objs = []
-    input_objs = [
-        loc_obj for loc_obj in objs if loc_obj.locator_prop.is_locator]
+    input_objs = [loc_obj for loc_obj in objs if loc_obj.locator_prop.is_locator]
     input_objs = input_objs + [vol_obj.parent for vol_obj in objs
                                if (vol_obj.parent
                                    and vol_obj.parent not in objs
@@ -173,19 +247,31 @@ def export_locators(objs, filepath):
         write_val(locator, "LocatorType", str(
             LTD_rev[loc_obj.locator_prop.loctype]))
         write_xyz(locator, "Position", *loc_obj.location)
-        for vol_obj in loc_obj.children:
-            write_volume(locator, vol_obj)
-        # Locator Matrix (BASE ONLY, DOESN'T FULLY WORK)
+
+        # Locator Matrix 
         if loc_obj.locator_prop.loctype in ['EVENT', 'ACTION']:
             loc_mat = write_chunk(locator, LOM)
-            write_locrot_to_mat(loc_mat, loc_obj)
+            if loc_obj.locator_prop.use_custom_loc_matrix and loc_obj.locator_prop.loc_matrix:
+                write_locrot_to_mat(loc_mat, loc_obj.locator_prop.loc_matrix)
+            else:
+                write_locrot_to_mat(loc_mat, loc_obj)
+        
         loc_data = ET.SubElement(locator, "Value", {"Name": "Data"})
+        
         # Type 0 (EVENT) support
         if loc_obj.locator_prop.loctype == 'EVENT':
             write_val(loc_data, "Unknown", loc_obj.locator_prop.event)
             if loc_obj.locator_prop.has_parameter:
                 write_val(loc_data, "Unknown2", loc_obj.locator_prop.parameter)
-
+            else:
+                write_val(loc_data, "Unknown2")
+        
+        
+        # Type 1 (SCRIPT) support
+        if loc_obj.locator_prop.loctype == 'EVENT':
+            write_val(loc_data, "Unknown", loc_obj.locator_prop.script_string)
+        
+        
         # Type 3 (CAR) Support
         if loc_obj.locator_prop.loctype == 'CAR':
             write_val(loc_data, "Rotation", degrees(loc_obj.matrix_world.to_euler()[2]))
@@ -193,9 +279,34 @@ def export_locators(objs, filepath):
             if loc_obj.locator_prop.free_car:
                 write_val(loc_data, "FreeCar", loc_obj.locator_prop.free_car)
 
-        #TODO Type 5 (ZONE) Support
+
+        #TODO Type 4 (SPLINE) support
+        if loc_obj.locator_prop.loctype == 'SPLINE':
+            spline_chunk = write_chunk(locator, "0x3000007")
+            write_val(spline_chunk, "Name", loc_obj.locator_prop.loc_spline.name)
+            positions = write_val(spline_chunk, "Positions")
+            for spline_point in loc_obj.locator_prop.loc_spline.data.splines[0].points:
+                coords = loc_obj.locator_prop.loc_spline.matrix_world @ spline_point.co.to_3d()
+                
+                write_xyz(positions, name=None, x=coords.x, y=coords.y, z=coords.z, element='Item')
+
+            Unknown = write_chunk(spline_chunk, "0x300000A")
+            write_val(Unknown, "Name", loc_obj.locator_prop.loc_spline_cam_name)
+            write_val(Unknown, "Data", "AQAAAAAAgD8AANBAAAAAAAAAAAAAAAAAAABIQgAAAAAAAIA/AAAAAArXIz0AAAAAAAAAQbgehT24HoU9") #???
+
+        
+        
+        # Type 5 (ZONE) Support
         if loc_obj.locator_prop.loctype == 'ZONE':
             write_val(loc_data, "DynaLoadData", loc_obj.locator_prop.dynaload_string)
+
+
+        
+        #TODO Type 6 (OCCLUSION) support
+        if loc_obj.locator_prop.loctype == 'EVENT':
+            pass
+
+
 
         #TODO Type 7 (INTERIOR) Support
         if loc_obj.locator_prop.loctype == 'INTERIOR':
@@ -232,4 +343,8 @@ def export_locators(objs, filepath):
         #TODO Type 13 (PED) Support
         if loc_obj.locator_prop.loctype == 'PED':
             pass
+
+        for vol_obj in [x for x in loc_obj.children if x.empty_display_type in ['CUBE','SPHERE']]:
+            write_volume(locator, vol_obj)
+        
     write_ET(root, filepath)

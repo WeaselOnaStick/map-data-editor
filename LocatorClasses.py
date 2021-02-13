@@ -80,12 +80,14 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
         name="InteriorName",
         description="Name of the interior"
     )
-    interior_matrix_rotation : bpy.props.FloatVectorProperty(
+    rotation_matrix : bpy.props.FloatVectorProperty(
         name="Rotation",
         subtype="EULER",
         unit="ROTATION",
         size=3,
     )
+    # Type 8 (DIRECTION) Support uses same matrix as above
+
     # Type 9 (ACTION) Support
     action_type: bpy.props.EnumProperty(
         items=LM.action_types,
@@ -396,17 +398,14 @@ class MDE_PT_Locators(bpy.types.Panel, LocatorModule):
                 box.prop(locator.locator_prop, "occlusions")
 
             
-            # Type 7 (INTERIOR) Support
+            # Type 7 (INTERIOR) and 8 (DIRECTION) Support
             if locator.locator_prop.loctype == 'INTERIOR':
                 row = box.row()
                 row.label(text="Interior Name")
                 row.prop(locator.locator_prop, "interior_name", text="")
-                box.prop(locator.locator_prop, "interior_matrix_rotation")
 
-            
-            # Type 8 (DIRECTION) Support
-            if locator.locator_prop.loctype == 'DIRECTION':
-                pass
+            if locator.locator_prop.loctype in ['INTERIOR', 'DIRECTION']:
+                box.prop(locator.locator_prop, "rotation_matrix")
 
             # Type 9 (ACTION) Support
             if locator.locator_prop.loctype == 'ACTION':

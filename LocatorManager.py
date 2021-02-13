@@ -209,10 +209,11 @@ def import_locators(filepath):
             loc_data = locator.find("*[@Name='Data']")
             loc_obj.locator_prop.occlusions = int(find_val(loc_data, "Occlusions"))
         
-        # Type 7 (INTERIOR) Support
-        if loctype == 'INTERIOR':
+        # Type 7 (INTERIOR) and 8 (DIRECTION) Support
+        if loctype in ['INTERIOR', 'DIRECTION']:
             loc_data = locator.find("*[@Name='Data']")
-            loc_obj.locator_prop.interior_name = find_val(loc_data, "InteriorName")
+            if loctype == 'INTERIOR':
+                loc_obj.locator_prop.interior_name = find_val(loc_data, "InteriorName")
             matrix_chunk = loc_data.find("*[@Name='Matrix']")
             m0 = (float(matrix_chunk[0].attrib['X']), float(matrix_chunk[0].attrib['Y']), float(matrix_chunk[0].attrib['Z']))
             m1 = (float(matrix_chunk[1].attrib['X']), float(matrix_chunk[1].attrib['Y']), float(matrix_chunk[1].attrib['Z']))
@@ -220,12 +221,7 @@ def import_locators(filepath):
             m = Matrix([m0,m1,m2])
             mq = m.to_quaternion()
             mq.y,mq.z = mq.z,mq.y
-            loc_obj.locator_prop.interior_matrix_rotation = mq.to_euler()
-            
-        
-        #TODO Type 8 (DIRECTION) Support
-        if loctype == 'DIRECTION':
-            pass
+            loc_obj.locator_prop.rotation_matrix = mq.to_euler()
         
         
         # Type 9 (ACTION) Support
@@ -341,20 +337,17 @@ def export_locators(objs, filepath):
 
 
 
-        # Type 7 (INTERIOR) Support
-        if loc_obj.locator_prop.loctype == 'INTERIOR':
-            write_val(loc_data, "InteriorName", loc_obj.locator_prop.interior_name)
-            rot = loc_obj.locator_prop.interior_matrix_rotation.to_quaternion().copy()
+        # Type 7 (INTERIOR) and 8 (DIRECTION) Support
+        if loc_obj.locator_prop.loctype in ['INTERIOR', 'DIRECTION']:
+            if loc_obj.locator_prop.loctype == 'INTERIOR':
+                write_val(loc_data, "InteriorName", loc_obj.locator_prop.interior_name)
+            rot = loc_obj.locator_prop.rotation_matrix.to_quaternion().copy()
             rot.y,rot.z = rot.z,rot.y
             rot = rot.to_matrix()
             matrix_el = ET.SubElement(loc_data, "Value", Name="Matrix")
             m1 = ET.SubElement(matrix_el, "Item", X=str(rot[0][0]), Y=str(rot[0][1]), Z=str(rot[0][2]))
             m2 = ET.SubElement(matrix_el, "Item", X=str(rot[1][0]), Y=str(rot[1][1]), Z=str(rot[1][2]))
             m3 = ET.SubElement(matrix_el, "Item", X=str(rot[2][0]), Y=str(rot[2][1]), Z=str(rot[2][2]))
-
-        #TODO Type 8 (DIRECTION) Support
-        if loc_obj.locator_prop.loctype == 'DIRECTION':
-            pass
 
         # Type 9 (ACTION) Support
         if loc_obj.locator_prop.loctype == 'ACTION':

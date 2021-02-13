@@ -18,10 +18,10 @@ from . import utils_bpy
 import inspect
 bl_info = {'name': "WMDE - Weasel's Map Data Editor",
            'author': 'Weasel On A Stick',
-           'version': (1, 0, 2),
+           'version': (2, 0, 0),
            'blender': (2, 82, 7),
            'location': 'View3D > Sidebar > WMDE',
-           'description': 'Edit SHAR map data, including: roads, paths, fences and locators',
+           'description': 'Edit SHAR map data, including: roads, paths, fences, locators, k-d Tree and other stuff',
            'tracker_url': 'https://github.com/WeaselOnaStick/map-data-editor/issues',
            'wiki_url': 'https://github.com/WeaselOnaStick/map-data-editor/wiki',
            'category': 'Import-Export'}
@@ -35,9 +35,9 @@ class WMDE_Preferences(bpy.types.AddonPreferences):
                                          default=True)
     FencesEnabled: bpy.props.BoolProperty(name='Enable Fences Module',
                                           default=True)
-    LocatorsEnabled: bpy.props.BoolProperty(name='Enable Locators Module (WIP)',
+    LocatorsEnabled: bpy.props.BoolProperty(name='Enable Locators Module',
                                             default=True)
-    MiscEnabled: bpy.props.BoolProperty(name='Enable Misc Module (WIP)',
+    MiscEnabled: bpy.props.BoolProperty(name='Enable Misc Module',
                                             default=True)
 
     def draw(self, context):

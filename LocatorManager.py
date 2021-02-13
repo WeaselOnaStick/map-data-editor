@@ -252,9 +252,10 @@ def import_locators(filepath):
             locator_create_cam(target_pos, follow_player, fov, locname+" Camera", locname+" Target", parent=loc_obj)
 
 
-        #TODO Type 13 (PED) Support
+        # Type 13 (PED) Support
         if loctype == 'PED':
-            pass
+            loc_data = locator.find("*[@Name='Data']")
+            loc_obj.locator_prop.ped_group = int(find_val(loc_data, "Unknown"))
 
 
 def invalid_locators(objs):
@@ -377,9 +378,9 @@ def export_locators(objs, filepath):
             write_val(loc_data, "Unknown4", 0)
             write_val(loc_data, "Unknown5", 0)
 
-        #TODO Type 13 (PED) Support
+        # Type 13 (PED) Support
         if loc_obj.locator_prop.loctype == 'PED':
-            pass
+            write_val(loc_data, "Unknown", loc_obj.locator_prop.ped_group)
 
         for vol_obj in [x for x in loc_obj.children if x.empty_display_type in ['CUBE','SPHERE']]:
             write_volume(locator, vol_obj)

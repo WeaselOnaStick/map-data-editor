@@ -108,6 +108,12 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
     cam_follow_player: bpy.props.BoolProperty(
         name="Follow Player"
     )
+    # Type 13 (PED) Support
+    ped_group: bpy.props.IntProperty(
+        name="Pedestrian Group",
+        description="Pedestrian groups are defined in leveli.mfk. This type of locator uses ped group ID",
+        default=0,
+    )
 
 
 class FileImportLocators(bpy.types.Operator, ImportHelper):
@@ -427,4 +433,5 @@ class MDE_PT_Locators(bpy.types.Panel, LocatorModule):
             
             # Type 13 (PED) Support
             if locator.locator_prop.loctype == 'PED':
-                pass
+                box.prop(locator.locator_prop, "ped_group")
+                

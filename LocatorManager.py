@@ -84,6 +84,7 @@ def locator_matrix_create(name="Locator Matrix", parent=None, location=Vector(),
     lm_obj.location = location - parent.location
     lm_obj.rotation_euler = rotation
     lm_obj.parent = parent
+    lm_obj.empty_display_type="ARROWS"
     parent.locator_prop.loc_matrix = lm_obj
     parent.locator_prop.use_custom_loc_matrix = True
     return lm_obj
@@ -95,7 +96,7 @@ def locator_create(name="Locator", location=Vector(), loctype='EVENT', volume_kw
     else:
         locator_collection = bpy.data.collections['Locators']
     loc_obj = bpy.data.objects.new(name, None)
-    loc_obj.empty_display_type = 'ARROWS'
+    loc_obj.empty_display_type = 'PLAIN_AXES'
     loc_obj.location = location
     loc_obj.locator_prop.is_locator = True
     loc_obj.locator_prop.loctype = loctype
@@ -104,10 +105,8 @@ def locator_create(name="Locator", location=Vector(), loctype='EVENT', volume_kw
     locator_collection.objects.link(loc_obj)
     return loc_obj
 
-# TODO Type 4 and 12 cam locators here somehow?
-# - Use blender's legacy track constraint for a camera and parent a locator to it
 
-def spline_create(points : list, name="Spline", parent=None, cam_name=''):
+def locator_spline_create(points : list, name="Spline", parent=None, cam_name=''):
     curve = bpy.data.curves.new(name, 'CURVE')
     curve.dimensions = '3D'
     spline = curve.splines.new('NURBS')
@@ -128,8 +127,30 @@ def spline_create(points : list, name="Spline", parent=None, cam_name=''):
     #bpy.data.objects.new()
     return curve_obj
 
-def locator_create_cam(point_list):
-    pass
+def locator_create_cam(target_pos=Vector(), follow_player=False, FOV=70, cam_name="Camera", target_name="Target", parent=None):
+    cam_data = bpy.data.cameras.new(cam_name)
+    cam_data.lens_unit = 'FOV'
+    cam_data.angle = radians(FOV)
+
+    cam_obj = bpy.data.objects.new(cam_name, cam_data)
+    target_obj = bpy.data.objects.new(target_name, None)
+
+    track_constr = cam_obj.constraints.new('TRACK_TO')
+    track_constr.target = target_obj
+    track_constr.track_axis = 'TRACK_NEGATIVE_Z'
+    track_constr.up_axis = 'UP_Y'
+
+    parent.users_collection[0].objects.link(cam_obj)
+    parent.users_collection[0].objects.link(target_obj)
+
+    parent.locator_prop.cam_obj = cam_obj
+    parent.locator_prop.cam_follow_player = follow_player
+
+    cam_obj.parent = parent
+    target_obj.parent = parent
+    target_obj.location = target_pos.copy() - parent.location.copy()
+
+    return cam_obj,target_obj
 
 
 def import_locators(filepath):
@@ -178,7 +199,7 @@ def import_locators(filepath):
             point_list = []
             for i in spline_chunk.find("*[@Name='Positions']"):
                 point_list.append(item_to_vector(i))
-            spline_create(point_list,name=spline_name,parent=loc_obj, cam_name=spline_cam_name)
+            locator_spline_create(point_list,name=spline_name,parent=loc_obj, cam_name=spline_cam_name)
 
         # Type 5 (ZONE) Support
         if loctype == 'ZONE':
@@ -201,7 +222,6 @@ def import_locators(filepath):
         # Type 9 (ACTION) Support
         if loctype == 'ACTION':
             loc_data = locator.findall("*[@Name='Data']/*[@Name='Unknown']/*")
-            print(f"found action data! {list(loc_data)}")
             loc_obj.locator_prop.action_unknown = loc_data[0].attrib['Value']
             loc_obj.locator_prop.action_unknown2 = loc_data[1].attrib['Value']
             loc_obj.locator_prop.action_type = loc_data[2].attrib['Value']
@@ -220,7 +240,12 @@ def import_locators(filepath):
 
         #TODO Type 12 (CAM) Support
         if loctype == 'CAM':
-            pass
+            loc_data = locator.find("*[@Name='Data']")
+            target_pos = find_xyz(loc_data, "TargetPosition")
+            fov = float(find_val(loc_data, "FOV"))
+            follow_player = bool(int(find_val(loc_data, "FollowPlayer")))
+            locator_create_cam(target_pos, follow_player, fov, locname+" Camera", locname+" Target", parent=loc_obj)
+
 
         #TODO Type 13 (PED) Support
         if loctype == 'PED':
@@ -233,7 +258,6 @@ def invalid_locators(objs):
 
 
 def export_locators(objs, filepath):
-    #TODO locator Matrix support: export matrix obj
     root = p3d_et()
     input_objs = []
     input_objs = [loc_obj for loc_obj in objs if loc_obj.locator_prop.is_locator]
@@ -280,7 +304,7 @@ def export_locators(objs, filepath):
                 write_val(loc_data, "FreeCar", loc_obj.locator_prop.free_car)
 
 
-        #TODO Type 4 (SPLINE) support
+        # Type 4 (SPLINE) support
         if loc_obj.locator_prop.loctype == 'SPLINE':
             spline_chunk = write_chunk(locator, "0x3000007")
             write_val(spline_chunk, "Name", loc_obj.locator_prop.loc_spline.name)
@@ -292,7 +316,7 @@ def export_locators(objs, filepath):
 
             Unknown = write_chunk(spline_chunk, "0x300000A")
             write_val(Unknown, "Name", loc_obj.locator_prop.loc_spline_cam_name)
-            write_val(Unknown, "Data", "AQAAAAAAgD8AANBAAAAAAAAAAAAAAAAAAABIQgAAAAAAAIA/AAAAAArXIz0AAAAAAAAAQbgehT24HoU9") #???
+            write_val(Unknown, "Data", "AQAAAAAAgD8AANBAAAAAAAAAAAAAAAAAAABIQgAAAAAAAIA/AAAAAArXIz0AAAAAAAAAQbgehT24HoU9") #TODO ???
 
         
         
@@ -331,14 +355,19 @@ def export_locators(objs, filepath):
 
         # Type 12 (CAM) Support
         if loc_obj.locator_prop.loctype == 'CAM':
+            if loc_obj.locator_prop.cam_follow_player or not loc_obj.locator_prop.cam_obj.constraints:
+                write_xyz(loc_data, "TargetPosition", *Vector())
+            else:
+                t = loc_obj.locator_prop.cam_obj.constraints[0].target
+                target_pos = t.matrix_world.to_translation()
+                write_xyz(loc_data, "TargetPosition", *target_pos)
+            write_val(loc_data, "FOV", degrees(loc_obj.locator_prop.cam_obj.data.angle))
             write_val(loc_data, "Unknown", 0.04)
+            write_val(loc_data, "FollowPlayer", value=str(int(loc_obj.locator_prop.cam_follow_player)))
             write_val(loc_data, "Unknown2", 0.04)
             write_val(loc_data, "Unknown3", 0)
             write_val(loc_data, "Unknown4", 0)
             write_val(loc_data, "Unknown5", 0)
-            write_xyz(loc_data, "TargetPosition", 0, 0, 0)
-            write_val(loc_data, "FOV", degrees(loc_obj.locator_prop.cam_dat.angle))
-            write_val(loc_data, "FollowPlayer", int(loc_obj.locator_prop.cam_follow_player))
 
         #TODO Type 13 (PED) Support
         if loc_obj.locator_prop.loctype == 'PED':

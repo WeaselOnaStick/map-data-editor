@@ -81,10 +81,14 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
         name="Unknown 2"
     )
     # Type 12 (CAM) Support
+    cam_obj: bpy.props.PointerProperty(
+        name="Camera Object",
+        type=bpy.types.Object,
+        #description="",
+    )
     cam_follow_player: bpy.props.BoolProperty(
         name="Follow Player"
     )
-    cam_dat: bpy.props.PointerProperty(type=bpy.types.Camera, name="Camera")
 
 
 class FileImportLocators(bpy.types.Operator, ImportHelper):
@@ -221,7 +225,7 @@ class MDE_OP_loc_spline_create(bpy.types.Operator):
 
     def execute(self, context):
         bpy.ops.object.select_all(action='DESELECT')
-        spline_obj = LM.spline_create(
+        spline_obj = LM.locator_spline_create(
             parent=get_cur_locator(context),
             points=[
                 context.scene.cursor.location + Vector((0,0,0)),
@@ -244,6 +248,18 @@ class MDE_OP_locator_spline_delete(bpy.types.Operator):
         bpy.data.curves.remove(cur_loc.locator_prop.loc_spline.data)
         return {'FINISHED'}
 
+class MDE_OP_loc_cam_create(bpy.types.Operator):
+    bl_idname = "object.loc_cam_create"
+    bl_label = "Create Static Camera"
+
+
+    def execute(self, context):
+        cur_loc = get_cur_locator(context)
+        bpy.ops.object.select_all(action='DESELECT')
+        cam_obj,target_obj = LM.locator_create_cam(target_pos = context.scene.cursor.location, parent = cur_loc)
+        target_obj.select_set(True)
+        context.view_layer.objects.active = target_obj
+        return {'FINISHED'}
 
 class LocatorModule:
 
@@ -271,7 +287,6 @@ class MDE_PT_LocatorFileManagement(bpy.types.Panel, LocatorModule):
 
 
 class MDE_PT_Locators(bpy.types.Panel, LocatorModule):
-    #TODO locator Matrix support: custom matrix object checkbox?
     bl_label = 'Locators'
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
@@ -298,7 +313,7 @@ class MDE_PT_Locators(bpy.types.Panel, LocatorModule):
             row.label(text="Locator Type:")
             row.prop(locator.locator_prop, "loctype", text="")
             if locator.locator_prop.loctype in ['EVENT','SCRIPT','SPLINE','ZONE','OCCLUSION','INTERIOR','ACTION','CAM','PED']:
-                #TODO flip currently active empty from sphere <-> cube
+                #TODO operator: flip currently active empty from sphere <-> cube
                 box.operator("object.mde_op_vol_create_sphere", icon='SPHERE')
                 box.operator("object.mde_op_vol_create_cube", icon='CUBE')
             
@@ -379,13 +394,15 @@ class MDE_PT_Locators(bpy.types.Panel, LocatorModule):
                 box.prop(locator.locator_prop, "action_unknown")
                 box.prop(locator.locator_prop, "action_unknown2")
                 
-            #TODO Type 12 (CAM) Support
+            # Type 12 (CAM) Support
             if locator.locator_prop.loctype == 'CAM':
-                box.prop(locator.locator_prop, "cam_dat")
-                if locator.locator_prop.cam_dat:
-                    box.prop(locator.locator_prop.cam_dat, "angle")
+                box.prop(locator.locator_prop, "cam_obj")
+                if locator.locator_prop.cam_obj:
+                    box.prop(locator.locator_prop.cam_obj.data, "angle")
                 else:
-                    box.label(text="No camera found!")
+                    row = box.row()
+                    row.label(text="No camera found!")
+                    row.operator("object.loc_cam_create", icon='PLUS', text="Create Camera")
                 box.prop(locator.locator_prop, "cam_follow_player")
 
             

@@ -58,7 +58,7 @@ action_types = [
 ]
 AT = {x[4]: x[0] for x in action_types}
 AT_rev = {x[0]: x[4] for x in action_types}
-#TODO add support for Custom trigger actions https://docs.donutteam.com/docs/lucasmodlauncher/hacks/custom-trigger-actions
+#TODO add support for Custom trigger actions? https://docs.donutteam.com/docs/lucasmodlauncher/hacks/custom-trigger-actions
 
 def locator_can_have_volume(object):
     return object.locator_prop.loctype not in [LTD[2], LTD[3], LTD[8], LTD[14]]
@@ -124,7 +124,6 @@ def locator_spline_create(points : list, name="Spline", parent=None, cam_name=''
     curve_obj.location = -parent.location.copy() + origin.copy()
     parent.locator_prop.loc_spline = curve_obj
     parent.locator_prop.loc_spline_cam_name = cam_name
-    #bpy.data.objects.new()
     return curve_obj
 
 def locator_create_cam(target_pos=Vector(), follow_player=False, FOV=70, cam_name="Camera", target_name="Target", parent=None):
@@ -155,7 +154,6 @@ def locator_create_cam(target_pos=Vector(), follow_player=False, FOV=70, cam_nam
 
 def import_locators(filepath):
     #TODO import_locators add sort option by type?
-    #TODO locator Matrix support: import matrix as separate empty obj
     root = terra_read(filepath)
     if 'Type' in root.attrib and root.attrib['Type'] == LOC:
         loc_list = [root]
@@ -206,13 +204,24 @@ def import_locators(filepath):
             loc_data = locator.find("*[@Name='Data']")
             loc_obj.locator_prop.dynaload_string = find_val(loc_data, "DynaLoadData")
 
-        #TODO Type 6 (OCCLUSION) support
+        # Type 6 (OCCLUSION) support
         if loctype == 'OCCLUSION':
-            pass
+            loc_data = locator.find("*[@Name='Data']")
+            loc_obj.locator_prop.occlusions = int(find_val(loc_data, "Occlusions"))
         
-        #TODO Type 7 (INTERIOR) Support
+        # Type 7 (INTERIOR) Support
         if loctype == 'INTERIOR':
-            pass
+            loc_data = locator.find("*[@Name='Data']")
+            loc_obj.locator_prop.interior_name = find_val(loc_data, "InteriorName")
+            matrix_chunk = loc_data.find("*[@Name='Matrix']")
+            m0 = (float(matrix_chunk[0].attrib['X']), float(matrix_chunk[0].attrib['Y']), float(matrix_chunk[0].attrib['Z']))
+            m1 = (float(matrix_chunk[1].attrib['X']), float(matrix_chunk[1].attrib['Y']), float(matrix_chunk[1].attrib['Z']))
+            m2 = (float(matrix_chunk[2].attrib['X']), float(matrix_chunk[2].attrib['Y']), float(matrix_chunk[2].attrib['Z']))
+            m = Matrix([m0,m1,m2])
+            mq = m.to_quaternion()
+            mq.y,mq.z = mq.z,mq.y
+            loc_obj.locator_prop.interior_matrix_rotation = mq.to_euler()
+            
         
         #TODO Type 8 (DIRECTION) Support
         if loctype == 'DIRECTION':
@@ -238,7 +247,7 @@ def import_locators(filepath):
         for volume in find_volumes(locator):
             volume_create(parent=loc_obj, **volume)
 
-        #TODO Type 12 (CAM) Support
+        # Type 12 (CAM) Support
         if loctype == 'CAM':
             loc_data = locator.find("*[@Name='Data']")
             target_pos = find_xyz(loc_data, "TargetPosition")
@@ -326,22 +335,28 @@ def export_locators(objs, filepath):
 
 
         
-        #TODO Type 6 (OCCLUSION) support
-        if loc_obj.locator_prop.loctype == 'EVENT':
-            pass
+        # Type 6 (OCCLUSION) support
+        if loc_obj.locator_prop.loctype == 'OCCLUSION':
+            write_val(loc_data, "Occlusions", loc_obj.locator_prop.occlusions)
 
 
 
-        #TODO Type 7 (INTERIOR) Support
+        # Type 7 (INTERIOR) Support
         if loc_obj.locator_prop.loctype == 'INTERIOR':
-            pass
+            write_val(loc_data, "InteriorName", loc_obj.locator_prop.interior_name)
+            rot = loc_obj.locator_prop.interior_matrix_rotation.to_quaternion().copy()
+            rot.y,rot.z = rot.z,rot.y
+            rot = rot.to_matrix()
+            matrix_el = ET.SubElement(loc_data, "Value", Name="Matrix")
+            m1 = ET.SubElement(matrix_el, "Item", X=str(rot[0][0]), Y=str(rot[0][1]), Z=str(rot[0][2]))
+            m2 = ET.SubElement(matrix_el, "Item", X=str(rot[1][0]), Y=str(rot[1][1]), Z=str(rot[1][2]))
+            m3 = ET.SubElement(matrix_el, "Item", X=str(rot[2][0]), Y=str(rot[2][1]), Z=str(rot[2][2]))
 
         #TODO Type 8 (DIRECTION) Support
         if loc_obj.locator_prop.loctype == 'DIRECTION':
             pass
 
         # Type 9 (ACTION) Support
-        #TODO Type 9 Support: Locator Matrix support
         if loc_obj.locator_prop.loctype == 'ACTION':
             write_val(loc_data, "Unknown2", 3)
             write_val(loc_data, "Unknown3", 1)
@@ -355,14 +370,14 @@ def export_locators(objs, filepath):
 
         # Type 12 (CAM) Support
         if loc_obj.locator_prop.loctype == 'CAM':
-            if loc_obj.locator_prop.cam_follow_player or not loc_obj.locator_prop.cam_obj.constraints:
+            if not loc_obj.locator_prop.cam_obj.constraints:
                 write_xyz(loc_data, "TargetPosition", *Vector())
             else:
                 t = loc_obj.locator_prop.cam_obj.constraints[0].target
                 target_pos = t.matrix_world.to_translation()
                 write_xyz(loc_data, "TargetPosition", *target_pos)
             write_val(loc_data, "FOV", degrees(loc_obj.locator_prop.cam_obj.data.angle))
-            write_val(loc_data, "Unknown", 0.04)
+            write_val(loc_data, "Unknown", 0.04) #TODO CAM Unknown parameters
             write_val(loc_data, "FollowPlayer", value=str(int(loc_obj.locator_prop.cam_follow_player)))
             write_val(loc_data, "Unknown2", 0.04)
             write_val(loc_data, "Unknown3", 0)

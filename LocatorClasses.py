@@ -69,6 +69,23 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
         name="Dyna Load Data",
         description="These strings define instructions to load and unload zones of the world (file names relative to the \"art\" folder)"
     )
+    # Type 6 (OCCLUSION) support
+    occlusions: bpy.props.IntProperty(
+        name="Occlusions",
+        description="Purpose of this is still unknown. Maybe YOU can figure it out?",
+        default=0,
+    )
+    # Type 7 (INTERIOR) Support
+    interior_name: bpy.props.StringProperty(
+        name="InteriorName",
+        description="Name of the interior"
+    )
+    interior_matrix_rotation : bpy.props.FloatVectorProperty(
+        name="Rotation",
+        subtype="EULER",
+        unit="ROTATION",
+        size=3,
+    )
     # Type 9 (ACTION) Support
     action_type: bpy.props.EnumProperty(
         items=LM.action_types,
@@ -376,12 +393,15 @@ class MDE_PT_Locators(bpy.types.Panel, LocatorModule):
 
             # Type 6 (OCCLUSION) support
             if locator.locator_prop.loctype == 'OCCLUSION':
-                pass
+                box.prop(locator.locator_prop, "occlusions")
 
             
             # Type 7 (INTERIOR) Support
             if locator.locator_prop.loctype == 'INTERIOR':
-                pass
+                row = box.row()
+                row.label(text="Interior Name")
+                row.prop(locator.locator_prop, "interior_name", text="")
+                box.prop(locator.locator_prop, "interior_matrix_rotation")
 
             
             # Type 8 (DIRECTION) Support

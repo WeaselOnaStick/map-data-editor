@@ -23,7 +23,7 @@ def p3d_et(ver=4.4):
 
 def write_val(loc, name, value=None):
     """returns a value ET element with Name=name and Value=value at loc"""
-    if not value:
+    if (value is None):
         return ET.SubElement(loc, 'Value', Name=name)
     else:
         return ET.SubElement(loc, 'Value', Name=name, Value=(str(value)))

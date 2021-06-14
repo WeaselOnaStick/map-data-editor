@@ -206,7 +206,7 @@ def rs_evaluate_verts(road_shape):
     """Takes road shape mesh object. returns list of verts in global space"""
     locs = []
     for i in [0, 2, 4, 6]:
-        locs.append(road_shape.matrix_world @ road_shape.data.vertices[i])
+        locs.append(road_shape.matrix_world @ road_shape.data.vertices[i].co)
     return locs
 
 

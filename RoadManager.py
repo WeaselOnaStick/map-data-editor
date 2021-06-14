@@ -205,13 +205,8 @@ def rs_edit_shift(shape_obj, distance):
 def rs_evaluate_verts(road_shape):
     """Takes road shape mesh object. returns list of verts in global space"""
     locs = []
-    for i, vec in enumerate(road_shape.data.vertices):
-        if i in (0, 2, 4, 6):
-            tv = Vector(vec.co)
-            tv.rotate(road_shape.rotation_euler)
-            tv = tv + road_shape.location
-            locs.append(tv)
-
+    for i in [0, 2, 4, 6]:
+        locs.append(road_shape.matrix_world @ road_shape.data.vertices[i])
     return locs
 
 
@@ -364,7 +359,6 @@ def export_roads_and_intersects(filepath, road_cols, inter_objs):
     for node_col in road_cols:
         locs = []
         for road_ob in node_col.objects:
-            #TODO multiply by world_matrix
             rs_edit_upd(road_ob)
             dat_seg = write_chunk(root, RDS)
             points = rs_evaluate_verts(road_ob)

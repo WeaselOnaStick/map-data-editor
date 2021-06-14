@@ -102,7 +102,6 @@ class FileExportRoadsAndIntersects(bpy.types.Operator, ExportHelper):
         else:
             road_cols = [x for x in bpy.data.collections if x.road_node_prop.to_export]
             inter_objs = [x for x in bpy.data.collections['Intersections'].objects]
-        #print(f"SELECTED ROADS: {road_cols}, INTERSECTS: {inter_objs}")
         
         if self.safe_check:
             if RoadManager.invalid_roads(road_cols, inter_objs, self.connect_margin):
@@ -582,7 +581,6 @@ class MDE_PT_RoadFileManagement(bpy.types.Panel, RoadModule):
 
     def draw(self, context):
         layout = self.layout
-        #layout.operator('import_scene.split_roads', icon='ASSET_MANAGER')
         layout.operator('import_scene.roads_p3dxml', icon='IMPORT')
         layout.operator('export_scene.roads_p3dxml', icon='EXPORT')
 

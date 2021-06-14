@@ -364,6 +364,7 @@ def export_roads_and_intersects(filepath, road_cols, inter_objs):
     for node_col in road_cols:
         locs = []
         for road_ob in node_col.objects:
+            #TODO multiply by world_matrix
             rs_edit_upd(road_ob)
             dat_seg = write_chunk(root, RDS)
             points = rs_evaluate_verts(road_ob)

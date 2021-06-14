@@ -6,17 +6,6 @@ from . import TreeManager as TM
 from os import path
 from .utils_p3dxml import *
 
-class FileExportTree(bpy.types.Operator, ExportHelper):
-    bl_idname = 'export_scene.tree_p3dxml'
-    bl_label = 'Export Tree'
-    filename_ext = '.p3dxml'
-    filter_glob: bpy.props.StringProperty(default='*.p3dxml',
-                                          options={'HIDDEN'},
-                                          maxlen=255)
-
-    def execute(self, context):
-        return {'FINISHED'}
-
 class LoadIntersectPoints(bpy.types.Operator, ImportHelper):
     """Select a p3dxml file that contains Intersect (0x3F00003) chunks"""
     bl_idname = 'import_scene.intersect_points'

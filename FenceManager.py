@@ -84,6 +84,7 @@ def invalid_fences(objs):
 def export_fences(filepath, objs):
     root = p3d_et()
     for obj in objs:
+        #TODO multiply by world_matrix
         fen = write_chunk(root, FEN)
         fen2 = write_chunk(fen, FEN2)
         start = obj.data.splines[0].points[0].co.copy().to_3d()

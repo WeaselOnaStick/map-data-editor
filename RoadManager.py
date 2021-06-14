@@ -310,7 +310,6 @@ def roads_have_invalid_intersections(road_cols):
 
 
 def roads_improperly_connected(road_cols, margin=1.5):
-    max_error = 0
     faulty_nodes = {}
     for node in road_cols:
         all_verts = []
@@ -344,7 +343,7 @@ def roads_improperly_connected(road_cols, margin=1.5):
         return False
     else:
         faulty_nodes = '\n'.join([x + str(faulty_nodes.get(x)) for x in faulty_nodes])
-        return str(f"Following road nodes are not properly connected to their corresponding intersection(s):\n{faulty_nodes}\nMaximum error = {max_error}")
+        return str(f"Following road nodes are not properly connected to their corresponding intersection(s):\n{faulty_nodes}")
 
 
 def export_roads_and_intersects(filepath, road_cols, inter_objs):

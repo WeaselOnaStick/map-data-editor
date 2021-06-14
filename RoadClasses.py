@@ -100,7 +100,7 @@ class FileExportRoadsAndIntersects(bpy.types.Operator, ExportHelper):
                 if obj.type == 'EMPTY' and obj.empty_display_type == 'SPHERE':
                     inter_objs.append(obj)
         else:
-            road_cols = [x for x in bpy.data.collections if x.road_node_prop.to_export]
+            road_cols = [x for x in bpy.data.collections if x.road_node_prop.to_export and x.objects]
             inter_objs = [x for x in bpy.data.collections['Intersections'].objects]
         
         if self.safe_check:

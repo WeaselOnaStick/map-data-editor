@@ -247,7 +247,7 @@ def import_roads(root, try_sort):
 
         r_col.road_node_prop.lanes = lanes
 
-    print(f"Imported exactly {road_counter} Roads and {road_shape_counter} Road Shapes in {time() - time_start:.3f} seconds")
+    print(f"Imported {road_counter} Roads and {road_shape_counter} Road Shapes in {time() - time_start:.3f} seconds")
 
 
 def import_intersects(root):
@@ -262,7 +262,7 @@ def import_intersects(root):
         if name not in bpy.data.objects:
             inter_create(name, pos, rad, beh)
 
-    print(f"Imported exactly {inter_counter} Intersections in {time() - time_start:.3f} seconds")
+    print(f"Imported {inter_counter} Intersections in {time() - time_start:.3f} seconds")
 
 
 def invalid_roads(road_cols, inter_objs, margin):

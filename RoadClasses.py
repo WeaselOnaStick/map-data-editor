@@ -101,7 +101,7 @@ class FileExportRoadsAndIntersects(bpy.types.Operator, ExportHelper):
                     inter_objs.append(obj)
         else:
             road_cols = [x for x in bpy.data.collections if x.road_node_prop.to_export and x.objects]
-            inter_objs = [x for x in bpy.data.collections['Intersections'].objects]
+            inter_objs = [x for x in bpy.data.collections['Intersections'].objects if x.users_collection]
         
         if self.safe_check:
             if RoadManager.invalid_roads(road_cols, inter_objs, self.connect_margin):

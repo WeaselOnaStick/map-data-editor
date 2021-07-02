@@ -136,7 +136,7 @@ class FileExportLocators(bpy.types.Operator, ExportHelper):
     filter_glob: bpy.props.StringProperty(default='*.p3dxml',
                                           options={'HIDDEN'},
                                           maxlen=255)
-    selected_only: bpy.props.BoolProperty(name='Export Selected Locators',
+    selected_only: bpy.props.BoolProperty(name='Selected Only',
                                           description='Only export selected locator objects',
                                           default=True)
     safe_check: bpy.props.BoolProperty(name='Check Locators Validity',

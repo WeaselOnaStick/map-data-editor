@@ -5,6 +5,8 @@ from os import path
 from .utils_p3dxml import *
 
 class Export_instance_listOperator(bpy.types.Operator, ExportHelper):
+    #TODO something is broken again
+    
     bl_idname = "export_scene.list_instance"
     bl_label = "Export Instance List"
     filename_ext = '.p3dxml'
@@ -13,7 +15,7 @@ class Export_instance_listOperator(bpy.types.Operator, ExportHelper):
         options={'HIDDEN'},
         maxlen=255)
     selected_only: bpy.props.BoolProperty(
-        name='Export Selected Only',
+        name='Selected Only',
         description='Only export selected objects',
         default=True)
     OSD_name: bpy.props.StringProperty(

@@ -267,10 +267,7 @@ def export_locators(objs, filepath):
     root = p3d_et()
     input_objs = []
     input_objs = [loc_obj for loc_obj in objs if loc_obj.locator_prop.is_locator]
-    input_objs = input_objs + [vol_obj.parent for vol_obj in objs
-                               if (vol_obj.parent
-                                   and vol_obj.parent not in objs
-                                   and vol_obj.parent.locator_prop.is_locator)]
+    input_objs += [child_obj.parent for child_obj in objs if (child_obj.parent and child_obj.parent.locator_prop.is_locator and child_obj.parent not in input_objs)]
     for loc_obj in input_objs:
         locator = write_chunk(root, LOC)
         write_val(locator, "Name", loc_obj.name)
@@ -298,7 +295,7 @@ def export_locators(objs, filepath):
         
         
         # Type 1 (SCRIPT) support
-        if loc_obj.locator_prop.loctype == 'EVENT':
+        if loc_obj.locator_prop.loctype == 'SCRIPT':
             write_val(loc_data, "Unknown", loc_obj.locator_prop.script_string)
         
         
@@ -322,7 +319,7 @@ def export_locators(objs, filepath):
 
             Unknown = write_chunk(spline_chunk, "0x300000A")
             write_val(Unknown, "Name", loc_obj.locator_prop.loc_spline_cam_name)
-            write_val(Unknown, "Data", "AQAAAAAAgD8AANBAAAAAAAAAAAAAAAAAAABIQgAAAAAAAIA/AAAAAArXIz0AAAAAAAAAQbgehT24HoU9") #TODO ???
+            write_val(Unknown, "Data", "AQAAAAAAgD8AANBAAAAAAAAAAAAAAAAAAABIQgAAAAAAAIA/AAAAAArXIz0AAAAAAAAAQbgehT24HoU9")
 
         
         
@@ -346,9 +343,9 @@ def export_locators(objs, filepath):
             rot.y,rot.z = rot.z,rot.y
             rot = rot.to_matrix()
             matrix_el = ET.SubElement(loc_data, "Value", Name="Matrix")
-            m1 = ET.SubElement(matrix_el, "Item", X=str(rot[0][0]), Y=str(rot[0][1]), Z=str(rot[0][2]))
-            m2 = ET.SubElement(matrix_el, "Item", X=str(rot[1][0]), Y=str(rot[1][1]), Z=str(rot[1][2]))
-            m3 = ET.SubElement(matrix_el, "Item", X=str(rot[2][0]), Y=str(rot[2][1]), Z=str(rot[2][2]))
+            ET.SubElement(matrix_el, "Item", X=str(rot[0][0]), Y=str(rot[0][1]), Z=str(rot[0][2]))
+            ET.SubElement(matrix_el, "Item", X=str(rot[1][0]), Y=str(rot[1][1]), Z=str(rot[1][2]))
+            ET.SubElement(matrix_el, "Item", X=str(rot[2][0]), Y=str(rot[2][1]), Z=str(rot[2][2]))
 
         # Type 9 (ACTION) Support
         if loc_obj.locator_prop.loctype == 'ACTION':
@@ -371,7 +368,7 @@ def export_locators(objs, filepath):
                 target_pos = t.matrix_world.to_translation()
                 write_xyz(loc_data, "TargetPosition", *target_pos)
             write_val(loc_data, "FOV", degrees(loc_obj.locator_prop.cam_obj.data.angle))
-            write_val(loc_data, "Unknown", 0.04) #TODO CAM Unknown parameters
+            write_val(loc_data, "Unknown", 0.04) 
             write_val(loc_data, "FollowPlayer", value=str(int(loc_obj.locator_prop.cam_follow_player)))
             write_val(loc_data, "Unknown2", 0.04)
             write_val(loc_data, "Unknown3", 0)

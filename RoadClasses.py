@@ -6,8 +6,7 @@ from . import RoadManager
 from math import radians
 from .utils_bpy import pcoll
 import os
-RoadProps = ['to_export', 'inter_start', 'inter_end',
-             'lanes', 'max_cars', 'speed', 'intel', 'short', 'unknown']
+RoadProps = ['to_export', 'inter_start', 'inter_end', 'lanes', 'max_cars', 'speed', 'intel', 'short', 'unknown']
 
 
 class RoadPropGroup(bpy.types.PropertyGroup):

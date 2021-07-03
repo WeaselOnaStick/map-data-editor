@@ -221,11 +221,8 @@ def find_volumes(loc):
 def write_volume(loc, vol_obj):
     volume = write_chunk(loc, VOL)
     write_val(volume, "Name", vol_obj.name)
-    if vol_obj.empty_display_type == 'CUBE':
-        write_val(volume, "IsRect", "1")
-    else:
-        write_val(volume, "IsRect", "0")
-    write_xyz(volume, "HalfExtents", *vol_obj.scale)
+    write_val(volume, "IsRect", int(vol_obj.empty_display_type == 'CUBE'))
+    write_xyz(volume, "HalfExtents", *list(map(abs,vol_obj.scale)))
     write_locrot_to_mat(volume, vol_obj)
 
 

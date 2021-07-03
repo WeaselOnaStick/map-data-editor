@@ -116,6 +116,24 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
     )
 
 
+
+class MDE_OP_Flip_Volume_Shape(bpy.types.Operator):
+    bl_idname = "object.flipvolumeshape"
+    bl_label = "Flip Volume Shape"
+
+    @classmethod
+    def poll(cls, context):
+        return context.object and context.object.type == 'EMPTY' and context.object.parent and context.object.parent.locator_prop and context.object.parent.locator_prop.is_locator
+
+    def execute(self, context):
+        if context.object.empty_display_type == 'SPHERE':
+            context.object.empty_display_type = 'CUBE'
+        else:
+            context.object.empty_display_type = 'SPHERE'
+        return {'FINISHED'}
+
+
+
 class FileImportLocators(bpy.types.Operator, ImportHelper):
     bl_idname = 'import_scene.locators_p3dxml'
     bl_label = 'Import Locators'
@@ -338,9 +356,12 @@ class MDE_PT_Locators(bpy.types.Panel, LocatorModule):
             row.label(text="Locator Type:")
             row.prop(locator.locator_prop, "loctype", text="")
             if locator.locator_prop.loctype in ['EVENT','SCRIPT','SPLINE','ZONE','OCCLUSION','INTERIOR','ACTION','CAM','PED']:
-                #TODO operator: flip currently active empty from sphere <-> cube
-                box.operator("object.mde_op_vol_create_sphere", icon='SPHERE')
-                box.operator("object.mde_op_vol_create_cube", icon='CUBE')
+                vol_box = box.box()
+                vol_box.label(text="Locator Volumes")
+                vol_box.operator("object.mde_op_vol_create_sphere", icon='SPHERE')
+                vol_box.operator("object.mde_op_vol_create_cube", icon='CUBE')
+                vol_box.operator("object.flipvolumeshape", icon='UV_SYNC_SELECT')
+                
             
             if locator.locator_prop.loctype in ['EVENT','ACTION']:
                 matrix_box = box.box()

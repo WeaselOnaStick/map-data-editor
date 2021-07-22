@@ -38,7 +38,6 @@ def SMIO_read():
 
     def GameFlow():
         return SHAR.read_int(VersionSelect(0x6C9014, 0x6C8FD4, 0x6C8FD4, 0x6C900C))
-
     
     GameStates = [
             "PreLicence",
@@ -64,46 +63,46 @@ def SMIO_read():
     SMIO_info['GameState'] = GameState = GameState(GameFlow())
 
     def CharacterPosition(Character):
-        Offset = Character + 100
-        v = Vector((SHAR.read_float(Offset), SHAR.read_float(Offset + 4), SHAR.read_float(Offset + 8)))
+        Offset = Character + 0x64
+        v = Vector((SHAR.read_float(Offset), SHAR.read_float(Offset + 0x4), SHAR.read_float(Offset + 0x8)))
         v.y,v.z = v.z,v.y
         return v
 
     def CharacterManager():
-        return SHAR.read_int(VersionSelect(7111792, 7111728, 7111728, 7111784))
+        return SHAR.read_int(VersionSelect(0x6C8470, 0x6C8430, 0x6C8430, 0x6C8468))
 
     def Characters(CharacterManager, Index):
-        return SHAR.read_int(CharacterManager + 192 + Index * 4)
+        return SHAR.read_int(CharacterManager + 0xC0 + Index * 0x4)
 
     def CharacterRotation(Character):
-        return SHAR.read_float(Character + 272)
+        return SHAR.read_float(Character + 0x110)
 
     def CharacterInCar(Character):
-        return SHAR.read_int(Character + 348) != 0
+        return SHAR.read_int(Character + 0x15C) != 0
 
     def CharacterName(CharacterManager, Index):
-        return SHAR.read_string(CharacterManager + 448 + Index * 64, 64)
+        return SHAR.read_string(CharacterManager + 0x1C0 + Index * 0x40, 64)
 
     def CharacterCar(Character):
-        return SHAR.read_int(Character + 348)        
+        return SHAR.read_int(Character + 0x15C)        
 
     def CarPosRot(Car):
-        Offset = Car + 184
-        # m = [
-        #     [SHAR.read_float(Offset), SHAR.read_float(Offset + 4), SHAR.read_float(Offset + 8), SHAR.read_float(Offset + 12)],
-        #     [SHAR.read_float(Offset + 16), SHAR.read_float(Offset + 20), SHAR.read_float(Offset + 24), SHAR.read_float(Offset + 28)],
-        #     [SHAR.read_float(Offset + 32), SHAR.read_float(Offset + 36), SHAR.read_float(Offset + 40), SHAR.read_float(Offset + 44)],
-        #     [SHAR.read_float(Offset + 48), SHAR.read_float(Offset + 52), SHAR.read_float(Offset + 56), SHAR.read_float(Offset + 60)]
-        #     ]
+        Offset = Car + 0xB8
+        m = [
+            [SHAR.read_float(Offset),           SHAR.read_float(Offset + 0x4),  SHAR.read_float(Offset + 0x8),  SHAR.read_float(Offset + 0xC)],
+            [SHAR.read_float(Offset + 0x10),    SHAR.read_float(Offset + 0x14), SHAR.read_float(Offset + 0x18), SHAR.read_float(Offset + 0x1C)],
+            [SHAR.read_float(Offset + 0x20),    SHAR.read_float(Offset + 0x24), SHAR.read_float(Offset + 0x28), SHAR.read_float(Offset + 0x2C)],
+            [SHAR.read_float(Offset + 0x30),    SHAR.read_float(Offset + 0x34), SHAR.read_float(Offset + 0x38), SHAR.read_float(Offset + 0x3C)]
+            ]
         rot = [
-            [SHAR.read_float(Offset),       SHAR.read_float(Offset + 4),    SHAR.read_float(Offset + 8)],
-            [SHAR.read_float(Offset + 16),  SHAR.read_float(Offset + 20),   SHAR.read_float(Offset + 24)],
-            [SHAR.read_float(Offset + 32),  SHAR.read_float(Offset + 36),   SHAR.read_float(Offset + 40)],
+            [SHAR.read_float(Offset),           SHAR.read_float(Offset + 0x4),    SHAR.read_float(Offset + 0x8)],
+            [SHAR.read_float(Offset + 0x10),    SHAR.read_float(Offset + 0x14),   SHAR.read_float(Offset + 0x18)],
+            [SHAR.read_float(Offset + 0x20),    SHAR.read_float(Offset + 0x24),   SHAR.read_float(Offset + 0x28)],
             ]
         rot = Matrix(rot).to_quaternion()
         rot.y,rot.z = rot.z,rot.y
         rot = rot.to_euler()
-        pos = Vector((SHAR.read_float(Offset + 48), SHAR.read_float(Offset + 52), SHAR.read_float(Offset + 56)))
+        pos = Vector((SHAR.read_float(Offset + 0x30), SHAR.read_float(Offset + 0x34), SHAR.read_float(Offset + 0x38)))
         pos.y,pos.z = pos.z,pos.y
         return pos,rot
 

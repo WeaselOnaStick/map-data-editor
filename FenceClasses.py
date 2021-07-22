@@ -184,3 +184,14 @@ class MDE_PT_Fences(bpy.types.Panel, FenceModule):
         col.operator((FenceFlip.bl_idname), icon='UV_SYNC_SELECT')
         col.operator((FenceRip.bl_idname), icon='MOD_ARRAY')
         col.operator((FenceApplyTran.bl_idname), icon='CHECKMARK')
+
+to_register = [
+    FenceApplyTran,
+    FenceCreate,
+    FenceFlip,
+    FenceRip,
+    FileExportFences,
+    FileImportFences,
+    MDE_PT_FenceFileManagement,
+    MDE_PT_Fences,
+]

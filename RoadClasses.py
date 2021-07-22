@@ -683,3 +683,29 @@ class MDE_PT_RoadShapes(bpy.types.Panel, RoadModule):
             col.prop((context.object.data), 'extrude', text='Width')
         col.operator('object.road_shape_finalize_bezier',
                      icon='OUTLINER_OB_CURVE')
+
+to_register = [
+    FileExportRoadsAndIntersects,
+    FileImportRoads,
+    IntersectCreate,
+    MDE_PT_Intersections,
+    MDE_PT_RoadFileManagement,
+    MDE_PT_RoadShapes,
+    MDE_PT_Roads,
+    RShapeAdjustWidth,
+    RShapeCreateElliptic,
+    RShapeCreateStraight,
+    RShapeFinalizeCurve,
+    RShapeFlip,
+    RShapePrepareCurve,
+    RShapeSelect,
+    RShapeShift,
+    RShapeShiftAdjacent,
+    RShapeUpdate,
+    RoadCreate,
+    RoadCreateAdjacent,
+    RoadDelete,
+    RoadDuplicate,
+    RoadPropGroup,
+    RoadSeparate,
+    ]

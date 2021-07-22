@@ -1,7 +1,7 @@
 from math import *
+from typing import Text
 from mathutils import Vector
 import bpy
-import bpy_extras.object_utils
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 import bpy.utils.previews
 import os
@@ -11,14 +11,14 @@ from . import FenceClasses
 from . import LocatorClasses
 from . import TreeClasses
 from . import InstanceClasses
+from . import SharMemIOClasses
 from . import utils_p3dxml
-from . import LocatorManager
-from . import utils_bpy
+from .utils_shar_mem_io import *
 
 import inspect
 bl_info = {'name': "WMDE - Weasel's Map Data Editor",
            'author': 'Weasel On A Stick',
-           'version': (2, 0, 1),
+           'version': (2, 1, 0),
            'blender': (2, 82, 7),
            'location': 'View3D > Sidebar > WMDE',
            'description': 'Edit SHAR map data, including: roads, paths, fences, locators, k-d Tree and other stuff',
@@ -29,16 +29,26 @@ bl_info = {'name': "WMDE - Weasel's Map Data Editor",
 
 class WMDE_Preferences(bpy.types.AddonPreferences):
     bl_idname = __name__
-    RoadsEnabled: bpy.props.BoolProperty(name='Enable Roads Module',
-                                         default=True)
-    PathsEnabled: bpy.props.BoolProperty(name='Enable Paths Module',
-                                         default=True)
-    FencesEnabled: bpy.props.BoolProperty(name='Enable Fences Module',
-                                          default=True)
-    LocatorsEnabled: bpy.props.BoolProperty(name='Enable Locators Module',
-                                            default=True)
-    MiscEnabled: bpy.props.BoolProperty(name='Enable Misc Module',
-                                            default=True)
+    RoadsEnabled: bpy.props.BoolProperty(
+        name='Enable Roads Module',
+        default=True)
+    PathsEnabled: bpy.props.BoolProperty(
+        name='Enable Paths Module',
+        default=True)
+    FencesEnabled: bpy.props.BoolProperty(
+        name='Enable Fences Module', 
+        default=True)
+    LocatorsEnabled: bpy.props.BoolProperty(
+        name='Enable Locators Module', 
+        default=True)
+    MiscEnabled: bpy.props.BoolProperty(
+        name='Enable Misc Module', 
+        default=True)
+    SHARMemIO: bpy.props.BoolProperty(
+        name='Enable SHAR Memory IO Module (Requires Pymem)',
+        description='This module allows this add-on to talk to the currently running process of Simpsons.exe and read/write various data on the fly', 
+        default=True)
+    
 
     def draw(self, context):
         layout = self.layout
@@ -48,6 +58,12 @@ class WMDE_Preferences(bpy.types.AddonPreferences):
         col.prop(self, 'FencesEnabled')
         col.prop(self, 'LocatorsEnabled')
         col.prop(self, 'MiscEnabled')
+        shar_mem_io_box = col.box()
+        shar_mem_io_box.prop(self, 'SHARMemIO')
+        shar_mem_io_row = shar_mem_io_box.row()
+        shar_mem_io_row.operator('wmde.install_pymem',icon='IMPORT')
+        op2 = shar_mem_io_row.operator('wmde.install_pymem', text="Uninstall Pymem", icon='TRASH')
+        op2.uninstall = True
 
 
 class FileSplitTerra(bpy.types.Operator, ImportHelper):
@@ -64,6 +80,27 @@ class FileSplitTerra(bpy.types.Operator, ImportHelper):
             {'INFO'}, f"several files have been created at {os.path.split(self.filepath)[0]}\n")
         return {'FINISHED'}
 
+class InstallPymemOperator(bpy.types.Operator):
+    bl_idname = "wmde.install_pymem"
+    bl_label = "Install Pymem"
+
+    uninstall : bpy.props.BoolProperty(
+        name="Uninstall",
+        default=False,
+        options={'HIDDEN'},
+    )
+
+    def execute(self, context):
+        import subprocess
+        import sys
+        if self.uninstall:
+            subprocess.check_call([sys.executable, "-m", "pip", "uninstall", "-y", 'pymem'])
+            self.report({'INFO'}, "Pymem uninstalled!")
+        else:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", 'pymem'])
+            self.report({'INFO'}, "Pymem installed!")
+        return {'FINISHED'}
+
 
 class DummyOP(bpy.types.Operator):
     """DummyOP"""
@@ -75,13 +112,17 @@ class DummyOP(bpy.types.Operator):
         return {'FINISHED'}
 
 
-classes = [WMDE_Preferences, FileSplitTerra, DummyOP]
-subclasses = [RoadClasses, PathClasses, FenceClasses, LocatorClasses, TreeClasses, InstanceClasses]
-parents = [bpy.types.Operator, bpy.types.PropertyGroup, bpy.types.Panel]
-#TODO change classes collection for readability
+classes = [WMDE_Preferences, FileSplitTerra, DummyOP, InstallPymemOperator]
+subclasses = [RoadClasses, PathClasses, FenceClasses, LocatorClasses, TreeClasses, InstanceClasses, SharMemIOClasses]
+
 for cls in subclasses:
-    classes += [x[1] for x in inspect.getmembers(cls, inspect.isclass) if any(
-        [issubclass(x[1], tryparent) for tryparent in parents])]
+    if cls.to_register:
+        classes += cls.to_register
+    
+    # old code that would dynamically add classes from [subclasses]
+    #parents = [bpy.types.Operator, bpy.types.PropertyGroup, bpy.types.Panel]
+    #new_classes = [x[1] for x in inspect.getmembers(cls, inspect.isclass) if any([issubclass(x[1], tryparent) for tryparent in parents])]
+    #print(cls.__name__ + ":" + str([x.__name__ for x in new_classes]))
 
 
 def register():
@@ -90,7 +131,7 @@ def register():
         register_class(cls)
 
     bpy.types.Collection.road_node_prop = bpy.props.PointerProperty(
-        type=(RoadClasses.RoadPropGroup),
+        type=RoadClasses.RoadPropGroup,
         name='WMDE Road Node Properties'
     )
     bpy.types.Object.inter_road_beh = bpy.props.IntProperty(name='Road Behaviour',
@@ -102,6 +143,11 @@ def register():
         type=(LocatorClasses.LocatorPropGroup),
         name='WMDE Locator Properties'
     )
+    
+    bpy.types.Scene.SMIO = bpy.props.PointerProperty(
+        type=(SharMemIOClasses.SMIOPropGroup),
+        name="SHAR Memory IO",
+    )
 
 
 def unregister():
@@ -111,6 +157,7 @@ def unregister():
     del bpy.types.Collection.road_node_prop
     del bpy.types.Object.inter_road_beh
     del bpy.types.Object.locator_prop
+    del bpy.types.Scene.SMIO
 
 
 if __name__ == '__main__':

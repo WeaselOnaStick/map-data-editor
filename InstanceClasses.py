@@ -135,3 +135,8 @@ class MDE_PT_InstanceFileManagment(bpy.types.Panel, MiscModule):
         layout.operator('export_scene.list_instance', icon='EXPORT')
         #layout.operator('object.dummy', icon='MONKEY')
 
+to_register = [
+    Export_instance_listOperator,
+    Import_instance_listOperator,
+    MDE_PT_InstanceFileManagment,
+]

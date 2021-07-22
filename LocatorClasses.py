@@ -456,3 +456,19 @@ class MDE_PT_Locators(bpy.types.Panel, LocatorModule):
             if locator.locator_prop.loctype == 'PED':
                 box.prop(locator.locator_prop, "ped_group")
                 
+to_register = [
+    FileExportLocators,
+    FileImportLocators,
+    LocatorPropGroup,
+    MDE_OP_Flip_Volume_Shape,
+    MDE_OP_loc_cam_create,
+    MDE_OP_loc_spline_create,
+    MDE_OP_locator_create,
+    MDE_OP_locator_matrix_create,
+    MDE_OP_locator_matrix_delete,
+    MDE_OP_locator_spline_delete,
+    MDE_OP_volume_create_cube,
+    MDE_OP_volume_create_sphere,
+    MDE_PT_LocatorFileManagement,
+    MDE_PT_Locators,
+]

@@ -88,3 +88,8 @@ class MDE_PT_TreeFileManagment(bpy.types.Panel, MiscModule):
         layout.operator('import_scene.intersect_points', icon='IMPORT')
         layout.operator('export_scene.grid_tree', icon='EXPORT')
 
+to_register = [
+    GridTreeExport,
+    LoadIntersectPoints,
+    MDE_PT_TreeFileManagment,
+]

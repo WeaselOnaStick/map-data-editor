@@ -182,3 +182,13 @@ class MDE_PT_Paths(bpy.types.Panel, PathModule):
         layout.operator((PathCreateBasic.bl_idname), icon='CURVE_PATH')
         layout.operator((PathCreateCircular.bl_idname), icon='LIGHT_POINT')
         layout.operator((PathApplyTran.bl_idname), icon='CHECKMARK')
+
+to_register = [
+    FileExportPaths,
+    FileImportPaths,
+    MDE_PT_PathFileManagement,
+    MDE_PT_Paths,
+    PathApplyTran,
+    PathCreateBasic,
+    PathCreateCircular,
+    ]

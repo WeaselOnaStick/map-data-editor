@@ -18,7 +18,7 @@ from .utils_shar_mem_io import *
 import inspect
 bl_info = {'name': "WMDE - Weasel's Map Data Editor",
            'author': 'Weasel On A Stick',
-           'version': (2, 1, 0),
+           'version': (2, 1, 3),
            'blender': (2, 82, 7),
            'location': 'View3D > Sidebar > WMDE',
            'description': 'Edit SHAR map data, including: roads, paths, fences, locators, k-d Tree and other stuff',
@@ -46,7 +46,7 @@ class WMDE_Preferences(bpy.types.AddonPreferences):
         default=True)
     SHARMemIO: bpy.props.BoolProperty(
         name='Enable SHAR Memory IO Module (Requires Pymem)',
-        description='This module allows this add-on to talk to the currently running process of Simpsons.exe and read/write various data on the fly', 
+        description='This module allows this add-on to talk to the currently running process of Simpsons.exe and read/write various data on the fly (Works best with ReleaseEnglish version of SHAR)', 
         default=True)
     
 
@@ -104,11 +104,12 @@ class InstallPymemOperator(bpy.types.Operator):
 
 class DummyOP(bpy.types.Operator):
     """DummyOP"""
-    bl_idname = 'object.dummy'
+    bl_idname = 'woas.dummy'
     bl_label = "Weasel's debugger"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+        utils_shar_mem_io.SMIO_Teleport_To(context.scene.cursor.location)
         return {'FINISHED'}
 
 
@@ -134,11 +135,12 @@ def register():
         type=RoadClasses.RoadPropGroup,
         name='WMDE Road Node Properties'
     )
-    bpy.types.Object.inter_road_beh = bpy.props.IntProperty(name='Road Behaviour',
-                                                            description="3 - traffic doesn't stop\n1 - traffic stops before going through (emulates irl traffic lights)\n0 - used primarily in bonus game tracks\n2,4 - unknown",
-                                                            min=0,
-                                                            max=4
-                                                            )
+    bpy.types.Object.inter_road_beh = bpy.props.IntProperty(
+        name='Road Behaviour',
+        description="3 - traffic doesn't stop\n1 - traffic stops before going through (emulates irl traffic lights)\n0 - used primarily in bonus game tracks\n2,4 - unknown",
+        min=0,
+        max=4
+        )
     bpy.types.Object.locator_prop = bpy.props.PointerProperty(
         type=(LocatorClasses.LocatorPropGroup),
         name='WMDE Locator Properties'

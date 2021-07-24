@@ -1,9 +1,10 @@
-# Credit goes to Lucas Cardellini for figuring out all the addresses and offsets
-# Also thank to 
+# Credit goes to Lucas Cardellini for figuring out all the addresses and offsets for SMIO_read()
+# SMIO_write
 
 from pymem import Pymem
 from mathutils import Vector, Matrix
 from math import degrees,radians
+
 Versions_dict = {
     1267409524:"ReleaseEnglish",
     4209509573:"Demo",
@@ -11,15 +12,11 @@ Versions_dict = {
     4232482053:"BestSellerSeries",
 }
 
- 
-
 def SMIO_read():
     try:
         SHAR = Pymem('Simpsons.exe')
     except:
         return
-    
-    SHAR = Pymem('Simpsons.exe')
 
     SMIO_info = {}
 
@@ -121,3 +118,53 @@ def SMIO_read():
     
     return SMIO_info
         
+def Get_Address_From_Pointer(SHAR: Pymem, base, offsets):
+    addr = SHAR.read_int(base)
+    for offset in offsets[:-1]:
+        addr = SHAR.read_int(addr+offset)
+    return addr + offsets[-1]
+
+def Player_Position_Address(SHAR : Pymem):
+    PosX_offground  =       Get_Address_From_Pointer(SHAR,SHAR.base_address+0x2C922C,[0x388])
+    PosY_offground  =       Get_Address_From_Pointer(SHAR,SHAR.base_address+0x2C922C,[0x38C])
+    PosZ_offground  =       Get_Address_From_Pointer(SHAR,SHAR.base_address+0x2C922C,[0x390])
+
+    PosX_onground   =       Get_Address_From_Pointer(SHAR,SHAR.base_address+0x2C922C,[0x108,0x10,0x14,0x14,0x48])
+    PosY_onground   =       Get_Address_From_Pointer(SHAR,SHAR.base_address+0x2C922C,[0x108,0x10,0x14,0x14,0x4C])
+    PosZ_onground   =       Get_Address_From_Pointer(SHAR,SHAR.base_address+0x2C922C,[0x108,0x10,0x14,0x14,0x50])
+    return [
+        (PosX_offground,PosY_offground,PosZ_offground),
+        (PosX_onground,PosY_onground,PosZ_onground)]
+
+def Car_PosRot_Address(SHAR : Pymem):
+    pass
+
+def Car_Pos_Address(SHAR : Pymem):
+    CarPosX = Get_Address_From_Pointer(SHAR,SHAR.base_address+0x2C8994,[0x4A4,0x4A8,0x70,0x94])
+    CarPosY = Get_Address_From_Pointer(SHAR,SHAR.base_address+0x2C8994,[0x4A4,0x4A8,0x70,0x98])
+    CarPosZ = Get_Address_From_Pointer(SHAR,SHAR.base_address+0x2C8994,[0x4A4,0x4A8,0x70,0x9C])
+
+    return (CarPosX,CarPosY,CarPosZ)
+
+def SMIO_Teleport_To(position : Vector):
+    try:
+        SHAR = Pymem('Simpsons.exe')
+    except:
+        return
+
+    SMIO = SMIO_read()
+    if SMIO.get('GameState') in ['NormalInGame', 'NormalPaused']:
+        if SMIO.get('Player In Car'):
+            (CarPosX,CarPosY,CarPosZ) = Car_Pos_Address(SHAR)
+            SHAR.write_float(CarPosX, position.x)
+            SHAR.write_float(CarPosY, position.z)
+            SHAR.write_float(CarPosZ, position.y)
+        else:
+            [(PosX_offground,PosY_offground,PosZ_offground),(PosX_onground,PosY_onground,PosZ_onground)] = Player_Position_Address(SHAR)
+            SHAR.write_float(PosX_offground, position.x)
+            SHAR.write_float(PosY_offground, position.z+1)
+            SHAR.write_float(PosZ_offground, position.y)
+            
+            SHAR.write_float(PosX_onground, position.x)
+            SHAR.write_float(PosY_onground, position.z)
+            SHAR.write_float(PosZ_onground, position.y)

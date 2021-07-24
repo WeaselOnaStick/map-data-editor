@@ -3,8 +3,6 @@ import bpy.props
 from .utils_shar_mem_io import *
 from mathutils import Euler
 
-#TODO TeleportToInGame Operator
-#TODO LocsToCurve Operator
 
 class SMIOPropGroup(bpy.types.PropertyGroup):
     Refresh_Rate: bpy.props.FloatProperty(
@@ -68,12 +66,14 @@ def update_SMIO():
             SMIO.Player_Rotation = SMIO_data.get('Player_Rotation')
 
         if SMIO.Sync_Cursor:
+            cursor = bpy.context.scene.cursor
+            bpy.context.scen.cursor.rotation_mode = 'XYZ'
             if SMIO_data.get('Player In Car'):
-                bpy.context.scene.cursor.location = SMIO.Car_Position
-                bpy.context.scene.cursor.rotation_euler = SMIO.Car_Rotation
+                cursor.location = SMIO.Car_Position
+                cursor.rotation_euler = SMIO.Car_Rotation
             else:
-                bpy.context.scene.cursor.location = SMIO.Player_Position
-                bpy.context.scene.cursor.rotation_euler = Euler((0,0,SMIO.Player_Rotation), 'XYZ')
+                cursor.location = SMIO.Player_Position
+                cursor.rotation_euler = Euler((0,0,SMIO.Player_Rotation), 'XYZ')
     if bpy.context.scene.SMIO.Refresh_Rate > 0:
         return 1.0/bpy.context.scene.SMIO.Refresh_Rate
     else:
@@ -91,10 +91,11 @@ class SMIO_refresh(bpy.types.Operator, SharMemIOModule):
 
 
 class Teleport_To_Cursor(bpy.types.Operator):
-    bl_idname = "scene.teleport_to_cursor"
+    bl_idname = "scene.smio_teleport_to_cursor"
     bl_label = "Teleport To 3D Cursor"
 
     def execute(self, context):
+        SMIO_Teleport_To(context.scene.cursor.location)
         return {'FINISHED'}
 
 
@@ -120,16 +121,18 @@ class MDE_PT_SHARMEMIO(bpy.types.Panel, SharMemIOModule):
                 if data_key in ['Player_Position', 'Player_Rotation', 'Car_Position', 'Car_Rotation',]:
                     tbox = box.box()
                     tbox.prop(context.scene.SMIO,data_key)
-                    tbox.enabled = False
+                    #tbox.enabled = False
                 else:
                     box.label(text=data_key + " : " + str(SMIO_data[data_key]))
         box.operator("scene.smio_refresh", icon='FILE_REFRESH')
         box.prop(context.scene.SMIO, "Refresh_Rate")
         box.prop(context.scene.SMIO, "Sync_Cursor")
+        box.operator('scene.smio_teleport_to_cursor')
         
 
 to_register = [
     SMIOPropGroup,
     SMIO_refresh,
+    Teleport_To_Cursor,
     MDE_PT_SHARMEMIO,
 ]

@@ -133,8 +133,12 @@ class MDE_OT_Teleport_To_Cursor(bpy.types.Operator):
     bl_label = "Teleport To 3D Cursor"
 
     def execute(self, context):
-        SMIO_Teleport_To(context.scene.cursor.location)
-        return {'FINISHED'}
+        if SMIO_read().get('Version') == 'ReleaseEnglish':
+            SMIO_Teleport_To(context.scene.cursor.location)
+            return {'FINISHED'}
+        else:
+            self.report({'ERROR'}, "Only ReleaseEnglish supported at the time")
+            return {'CANCELLED'}
 
 
 class MDE_PT_SHARMEMIO(bpy.types.Panel, SharMemIOModule):
@@ -159,7 +163,6 @@ class MDE_PT_SHARMEMIO(bpy.types.Panel, SharMemIOModule):
                 if data_key in ['Player_Position', 'Player_Rotation', 'Car_Position', 'Car_Rotation',]:
                     tbox = box.box()
                     tbox.prop(context.scene.SMIO,data_key)
-                    #tbox.enabled = False
                 else:
                     box.label(text=data_key + " : " + str(SMIO_data[data_key]))
         box.operator("scene.smio_refresh", icon='FILE_REFRESH')

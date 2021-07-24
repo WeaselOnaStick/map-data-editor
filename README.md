@@ -5,8 +5,9 @@ Import/Export/Edit/Create The Simpsons: Hit & Run map data with __Blender 2.80+_
 * Road Networks 
 * Fences
 * Pedestrian Paths
-* Locators (beta)
-* Tree (alpha)
+* Locators 
+* Tree 
+* Directly read some data from Simpsons.exe in real time
 
 ![MDE_Banner](https://i.imgur.com/UvOAuUy.png)
 

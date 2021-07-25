@@ -7,7 +7,8 @@ Import/Export/Edit/Create The Simpsons: Hit & Run map data with __Blender 2.80+_
 * Pedestrian Paths
 * Locators 
 * Tree 
-* Directly read some data from Simpsons.exe in real time
+* Directly read some data from Simpsons.exe in real time (credit to Lucas for figuring out correct pointers for this)
+* Directly write player's position using 3D cursor's location (credit to me for figuring out correct pointers for this)
 
 ![MDE_Banner](https://i.imgur.com/UvOAuUy.png)
 

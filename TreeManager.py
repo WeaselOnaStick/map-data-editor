@@ -5,7 +5,6 @@ from .utils_p3dxml import *
 import re
 
 def point_in_bound(a : Vector, bound_bl : Vector, bound_ur : Vector, ignore_z = True):
-    #TODO change to "point_in_node" made specifically for
     if any([
         a.x < bound_bl.x, 
         a.y < bound_bl.y, 

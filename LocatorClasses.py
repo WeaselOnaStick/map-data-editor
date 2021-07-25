@@ -8,7 +8,6 @@ from os import path
 
 
 class LocatorPropGroup(bpy.types.PropertyGroup):
-    #TODO support for coloring (type 0 event 65) locators
 
     is_locator: bpy.props.BoolProperty(
         name='Is a SHAR locator',

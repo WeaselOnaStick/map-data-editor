@@ -83,7 +83,6 @@ class MDE_PT_TreeFileManagment(bpy.types.Panel, MiscModule):
         row.label(text='', icon='GRID')
 
     def draw(self, context):
-        #TODO have panel that displays current tree basic info. split grid_tree into tree *creation* and tree *export*
         layout = self.layout
         layout.operator('import_scene.intersect_points', icon='IMPORT')
         layout.operator('export_scene.grid_tree', icon='EXPORT')

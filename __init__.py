@@ -18,7 +18,7 @@ from .utils_shar_mem_io import *
 import inspect
 bl_info = {'name': "WMDE - Weasel's Map Data Editor",
            'author': 'Weasel On A Stick',
-           'version': (2, 1, 4),
+           'version': (2, 1, 5),
            'blender': (2, 82, 7),
            'location': 'View3D > Sidebar > WMDE',
            'description': 'Edit SHAR map data, including: roads, paths, fences, locators, k-d Tree and other stuff',

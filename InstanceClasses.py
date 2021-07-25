@@ -4,9 +4,7 @@ from bpy_extras.io_utils import ExportHelper, ImportHelper
 from os import path
 from .utils_p3dxml import *
 
-class Export_instance_listOperator(bpy.types.Operator, ExportHelper):
-    #TODO something is broken again
-    
+class Export_instance_listOperator(bpy.types.Operator, ExportHelper):    
     bl_idname = "export_scene.list_instance"
     bl_label = "Export Instance List"
     filename_ext = '.p3dxml'

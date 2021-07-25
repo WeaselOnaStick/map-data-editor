@@ -8,6 +8,7 @@ from os import path
 
 
 class LocatorPropGroup(bpy.types.PropertyGroup):
+    #TODO support for coloring (type 0 event 65) locators
 
     is_locator: bpy.props.BoolProperty(
         name='Is a SHAR locator',
@@ -37,9 +38,15 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
     has_parameter: bpy.props.BoolProperty(
         name='Has Parameter',
     )
-    parameter: bpy.props.IntProperty(
+    parameter: bpy.props.StringProperty(
         name='Parameter',
-        min=0
+    )
+    event_65_color: bpy.props.FloatVectorProperty(
+        name='Lighting Color',
+        subtype='COLOR',
+        size=4,
+        min=0,
+        max=1,
     )
     # Type 1 (SCRIPT) Support
     script_string: bpy.props.StringProperty(
@@ -387,7 +394,10 @@ class MDE_PT_Locators(bpy.types.Panel, LocatorModule):
                 box.prop(locator.locator_prop, "has_parameter")
                 grd = box.grid_flow()
                 grd.enabled = locator.locator_prop.has_parameter
-                grd.prop(locator.locator_prop, "parameter")
+                if locator.locator_prop.event == 65:
+                    grd.prop(locator.locator_prop, "event_65_color")
+                else:
+                    grd.prop(locator.locator_prop, "parameter")
 
             # Type 1 (SCRIPT) support
             if locator.locator_prop.loctype == 'SCRIPT':

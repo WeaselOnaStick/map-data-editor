@@ -171,7 +171,14 @@ def import_locators(filepath):
             loc_obj.locator_prop.event = int(find_val(loc_data, "Unknown"))
             if find_val(loc_data, "Unknown2"):
                 loc_obj.locator_prop.has_parameter = True
-                loc_obj.locator_prop.parameter = int(find_val(loc_data, "Unknown2"))
+                if loc_obj.locator_prop.event == 65:
+                    clr = hex(int(find_val(loc_data, "Unknown2")))[2:]
+                    a = round(int(clr[0:2],16)/255,4)
+                    r = round(int(clr[2:4],16)/255,4)
+                    g = round(int(clr[4:6],16)/255,4)
+                    b = round(int(clr[6:8],16)/255,4)
+                    loc_obj.locator_prop.event_65_color = (r,g,b,a)
+                loc_obj.locator_prop.parameter = find_val(loc_data, "Unknown2")
 
         
         # Type 1 (SCRIPT) support
@@ -289,7 +296,18 @@ def export_locators(objs, filepath):
         if loc_obj.locator_prop.loctype == 'EVENT':
             write_val(loc_data, "Unknown", loc_obj.locator_prop.event)
             if loc_obj.locator_prop.has_parameter:
-                write_val(loc_data, "Unknown2", loc_obj.locator_prop.parameter)
+                if loc_obj.locator_prop.event == 65:
+                    r = hex(int(loc_obj.locator_prop.event_65_color[0]*255))[2:4]
+                    g = hex(int(loc_obj.locator_prop.event_65_color[1]*255))[2:4]
+                    b = hex(int(loc_obj.locator_prop.event_65_color[2]*255))[2:4]
+                    a = hex(int(loc_obj.locator_prop.event_65_color[3]*255))[2:4]
+
+                    clr = int(a+r+g+b,16)
+                    loc_obj.locator_prop.parameter = str(clr)
+                    write_val(loc_data, "Unknown2", clr)
+
+                else:
+                    write_val(loc_data, "Unknown2", loc_obj.locator_prop.parameter)
             else:
                 write_val(loc_data, "Unknown2")
         

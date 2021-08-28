@@ -126,6 +126,36 @@ def locator_spline_create(points : list, name="Spline", parent=None, cam_name=''
     parent.locator_prop.loc_spline_cam_name = cam_name
     return curve_obj
 
+def GetRailCamProps(locator_obj : bpy.types.Object) -> dict:
+    DataDict = {}
+    DataDict['Name']       = locator_obj.locator_prop.loc_spline_rail_cam_name
+    DataDict['Behaviour']       = locator_obj.locator_prop.loc_spline_behaviour
+    DataDict['MinRadius']       = locator_obj.locator_prop.loc_spline_min_radius
+    DataDict['MaxRadius']       = locator_obj.locator_prop.loc_spline_max_radius
+    DataDict['TrackRail']       = locator_obj.locator_prop.loc_spline_track_rail
+    DataDict['TrackDist']       = locator_obj.locator_prop.loc_spline_track_dist
+    DataDict['ReverseSense']    = locator_obj.locator_prop.loc_spline_reverse_sense
+    DataDict['FOV']             = locator_obj.locator_prop.loc_spline_FOV
+    DataDict['TargetOffset']    = locator_obj.locator_prop.loc_spline_target_offset
+    DataDict['AxisPlay']        = locator_obj.locator_prop.loc_spline_axis_play
+    DataDict['PositionLag']     = locator_obj.locator_prop.loc_spline_position_lag
+    DataDict['TargetLag']       = locator_obj.locator_prop.loc_spline_target_lag
+    return DataDict
+
+def SetRailCamProps(locator_obj : bpy.types.Object, DataDict : dict):
+    locator_obj.locator_prop.loc_spline_rail_cam_name   = DataDict['Name']     
+    locator_obj.locator_prop.loc_spline_behaviour       = DataDict['Behaviour']       
+    locator_obj.locator_prop.loc_spline_min_radius      = DataDict['MinRadius']       
+    locator_obj.locator_prop.loc_spline_max_radius      = DataDict['MaxRadius']       
+    locator_obj.locator_prop.loc_spline_track_rail      = DataDict['TrackRail']       
+    locator_obj.locator_prop.loc_spline_track_dist      = DataDict['TrackDist']       
+    locator_obj.locator_prop.loc_spline_reverse_sense   = DataDict['ReverseSense']    
+    locator_obj.locator_prop.loc_spline_FOV             = DataDict['FOV']             
+    locator_obj.locator_prop.loc_spline_target_offset   = DataDict['TargetOffset']    
+    locator_obj.locator_prop.loc_spline_axis_play       = DataDict['AxisPlay']        
+    locator_obj.locator_prop.loc_spline_position_lag    = DataDict['PositionLag']     
+    locator_obj.locator_prop.loc_spline_target_lag      = DataDict['TargetLag'] 
+
 def locator_create_cam(target_pos=Vector(), follow_player=False, FOV=70, cam_name="Camera", target_name="Target", parent=None):
     cam_data = bpy.data.cameras.new(cam_name)
     cam_data.lens_unit = 'FOV'
@@ -200,11 +230,14 @@ def import_locators(filepath):
         if loctype == 'SPLINE':
             spline_chunk = find_chunks(locator, "0x3000007")[0]
             spline_name = find_val(spline_chunk, "Name")
-            spline_cam_name = find_val(find_chunks(spline_chunk, "0x300000A")[0],"Name")
             point_list = []
             for i in spline_chunk.find("*[@Name='Positions']"):
                 point_list.append(item_to_vector(i))
-            locator_spline_create(point_list,name=spline_name,parent=loc_obj, cam_name=spline_cam_name)
+            locator_spline_create(point_list,name=spline_name,parent=loc_obj, cam_name=spline_name)
+            RailCamPropsDict = B64ToRailCam(find_val(find_chunks(spline_chunk, "0x300000A")[0],"Data"))
+            RailCamPropsDict["Name"] = find_val(find_chunks(spline_chunk, "0x300000A")[0],"Name")
+            SetRailCamProps(loc_obj,RailCamPropsDict)
+
 
         # Type 5 (ZONE) Support
         if loctype == 'ZONE':
@@ -332,12 +365,12 @@ def export_locators(objs, filepath):
             positions = write_val(spline_chunk, "Positions")
             for spline_point in loc_obj.locator_prop.loc_spline.data.splines[0].points:
                 coords = loc_obj.locator_prop.loc_spline.matrix_world @ spline_point.co.to_3d()
-                
                 write_xyz(positions, name=None, x=coords.x, y=coords.y, z=coords.z, element='Item')
 
             Unknown = write_chunk(spline_chunk, "0x300000A")
-            write_val(Unknown, "Name", loc_obj.locator_prop.loc_spline_cam_name)
-            write_val(Unknown, "Data", "AQAAAAAAgD8AANBAAAAAAAAAAAAAAAAAAABIQgAAAAAAAIA/AAAAAArXIz0AAAAAAAAAQbgehT24HoU9")
+            DataDict = GetRailCamProps(loc_obj)
+            write_val(Unknown, "Name", DataDict["Name"])
+            write_val(Unknown, "Data", RailCamToB64(DataDict))
 
         
         
@@ -364,6 +397,7 @@ def export_locators(objs, filepath):
             ET.SubElement(matrix_el, "Item", X=str(rot[0][0]), Y=str(rot[0][1]), Z=str(rot[0][2]))
             ET.SubElement(matrix_el, "Item", X=str(rot[1][0]), Y=str(rot[1][1]), Z=str(rot[1][2]))
             ET.SubElement(matrix_el, "Item", X=str(rot[2][0]), Y=str(rot[2][1]), Z=str(rot[2][2]))
+
 
         # Type 9 (ACTION) Support
         if loc_obj.locator_prop.loctype == 'ACTION':

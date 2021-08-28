@@ -1,10 +1,10 @@
 import bpy
-from bpy.props import *
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 from mathutils import Vector
 from .utils_bpy import reminder
 from . import LocatorManager as LM
 from os import path
+from math import radians
 
 
 class LocatorPropGroup(bpy.types.PropertyGroup):
@@ -66,9 +66,67 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
         type=bpy.types.Object,
         description="Locator spline constrains game camera to sit on the spline and follow player"
     )
-    loc_spline_cam_name: bpy.props.StringProperty(
-        name="Unknown",
-        description="Camera name?"
+    loc_spline_rail_cam_name: bpy.props.StringProperty(
+        name="Rail Camera Name",
+        default="RailCam"
+    )
+    loc_spline_behaviour: bpy.props.IntProperty(
+        name="Behaviour",
+        default=1,
+    )
+    loc_spline_min_radius: bpy.props.FloatProperty(
+        name="Minimum Radius",
+        default=0.2,
+        precision=6,
+    )
+    loc_spline_max_radius: bpy.props.FloatProperty(
+        name="Maximum Radius",
+        default=0.4,
+        precision=6,
+    )
+    loc_spline_track_rail: bpy.props.IntProperty(
+        name="Track Rail",
+        default=1,
+    )
+    loc_spline_track_dist: bpy.props.FloatProperty(
+        name="Track Distance",
+        default=0.002,
+        precision=6,
+    )
+    loc_spline_reverse_sense: bpy.props.IntProperty(
+        name="Reverse Sense",
+        default=0,
+    )
+    loc_spline_FOV: bpy.props.FloatProperty(
+        name="FOV",
+        default=radians(53.0),
+        soft_min=0,
+        subtype='ANGLE',
+        precision=6,
+    )
+    loc_spline_target_offset: bpy.props.FloatVectorProperty(
+        name="Target Offset",
+        size=3,
+        subtype='TRANSLATION',
+        unit='LENGTH',
+        precision=4,
+    )
+    loc_spline_axis_play: bpy.props.FloatVectorProperty(
+        name="Axis Play",
+        size=3,
+        subtype='TRANSLATION',
+        unit='LENGTH',
+        precision=4,
+    )
+    loc_spline_position_lag: bpy.props.FloatProperty(
+        name="Position Lag",
+        default=0.3,
+        precision=6,
+    )
+    loc_spline_target_lag: bpy.props.FloatProperty(
+        name="Target Lag",
+        default=0.3,
+        precision=6,
     )
     # Type 5 (ZONE) Support
     dynaload_string: bpy.props.StringProperty(
@@ -355,115 +413,134 @@ class MDE_PT_Locators(bpy.types.Panel, LocatorModule):
         col.separator(factor=1.5)
         if not locator:
             col.label(text=f"No Locator Selected")
-        if locator:
-            col.label(text=f"{locator.name}")
-            box = layout.box()
-            row = box.row(align=True)
-            row.label(text="Locator Type:")
-            row.prop(locator.locator_prop, "loctype", text="")
-            if locator.locator_prop.loctype in ['EVENT','SCRIPT','SPLINE','ZONE','OCCLUSION','INTERIOR','ACTION','CAM','PED']:
-                vol_box = box.box()
-                vol_box.label(text="Locator Volumes")
-                vol_box.operator("object.mde_op_vol_create_sphere", icon='SPHERE')
-                vol_box.operator("object.mde_op_vol_create_cube", icon='CUBE')
-                vol_box.operator("object.flipvolumeshape", icon='UV_SYNC_SELECT')
-                
+            return
+        col.label(text=f"{locator.name}")
+        box = layout.box()
+        row = box.row(align=True)
+        row.label(text="Locator Type:")
+        row.prop(locator.locator_prop, "loctype", text="")
+        if locator.locator_prop.loctype in ['EVENT','SCRIPT','SPLINE','ZONE','OCCLUSION','INTERIOR','ACTION','CAM','PED']:
+            vol_box = box.box()
+            vol_box.label(text="Locator Volumes")
+            vol_box.operator("object.mde_op_vol_create_sphere", icon='SPHERE')
+            vol_box.operator("object.mde_op_vol_create_cube", icon='CUBE')
+            vol_box.operator("object.flipvolumeshape", icon='UV_SYNC_SELECT')
             
-            if locator.locator_prop.loctype in ['EVENT','ACTION']:
-                matrix_box = box.box()
-                matrix_box.prop(locator.locator_prop, "use_custom_loc_matrix")
-                row = matrix_box.row(align=True)
-                row.label(text="Locator Matrix")
-                row.prop(locator.locator_prop, "loc_matrix", text="")
-                row.enabled = locator.locator_prop.use_custom_loc_matrix
-                col = matrix_box.column(align=True)
-                row = col.row()
-                row.operator("object.loc_matrix_create", icon='PLUS')
-                row.enabled = locator.locator_prop.use_custom_loc_matrix and not locator.locator_prop.loc_matrix
-                row = col.row()
-                row.operator("object.loc_matrix_delete", icon='TRASH')
-                row.enabled = bool(locator.locator_prop.loc_matrix)
-                
+        
+        if locator.locator_prop.loctype in ['EVENT','ACTION']:
+            matrix_box = box.box()
+            matrix_box.prop(locator.locator_prop, "use_custom_loc_matrix")
+            row = matrix_box.row(align=True)
+            row.label(text="Locator Matrix")
+            row.prop(locator.locator_prop, "loc_matrix", text="")
+            row.enabled = locator.locator_prop.use_custom_loc_matrix
+            col = matrix_box.column(align=True)
+            row = col.row()
+            row.operator("object.loc_matrix_create", icon='PLUS')
+            row.enabled = locator.locator_prop.use_custom_loc_matrix and not locator.locator_prop.loc_matrix
+            row = col.row()
+            row.operator("object.loc_matrix_delete", icon='TRASH')
+            row.enabled = bool(locator.locator_prop.loc_matrix)
             
+        
 
 
-            # Type 0 (EVENT) support
-            if locator.locator_prop.loctype == 'EVENT':
-                box.prop(locator.locator_prop, "event")
-                box.prop(locator.locator_prop, "has_parameter")
-                grd = box.grid_flow()
-                grd.enabled = locator.locator_prop.has_parameter
-                if locator.locator_prop.event == 65:
-                    grd.prop(locator.locator_prop, "event_65_color")
-                else:
-                    grd.prop(locator.locator_prop, "parameter")
+        # Type 0 (EVENT) support
+        if locator.locator_prop.loctype == 'EVENT':
+            box.prop(locator.locator_prop, "event")
+            box.prop(locator.locator_prop, "has_parameter")
+            grd = box.grid_flow()
+            grd.enabled = locator.locator_prop.has_parameter
+            if locator.locator_prop.event == 65:
+                grd.prop(locator.locator_prop, "event_65_color")
+            else:
+                grd.prop(locator.locator_prop, "parameter")
 
-            # Type 1 (SCRIPT) support
-            if locator.locator_prop.loctype == 'SCRIPT':
-                box.prop(locator.locator_prop, "script_string")
+        # Type 1 (SCRIPT) support
+        if locator.locator_prop.loctype == 'SCRIPT':
+            box.prop(locator.locator_prop, "script_string")
 
-            # Type 3 (CAR) Support
-            if locator.locator_prop.loctype == 'CAR':
-                box.prop(locator.locator_prop, "free_car")
-                box.prop(locator.locator_prop, "parked_car")
+        # Type 3 (CAR) Support
+        if locator.locator_prop.loctype == 'CAR':
+            box.prop(locator.locator_prop, "free_car")
+            box.prop(locator.locator_prop, "parked_car")
 
-            # Type 4 (SPLINE) support
-            if locator.locator_prop.loctype == 'SPLINE':
-                box = box.box()
+        # Type 4 (SPLINE) support
+        if locator.locator_prop.loctype == 'SPLINE':
+            splinebox = box.box()
+            row = splinebox.row()
+            row.label(text="Spline")
+            row.prop(locator.locator_prop, "loc_spline", text="")
+            col = splinebox.column()
+            row = col.row()
+            row.operator("object.loc_spline_create", icon='PLUS')
+            row.enabled = not locator.locator_prop.loc_spline
+            row = col.row()
+            row.operator("object.loc_spline_delete", icon='TRASH')
+            row.enabled = bool(locator.locator_prop.loc_spline)
+            row = col.row()
+            railcambox = box.box()
+            railcambox.label(text="Rail Camera Properties")
+            column = railcambox.column()
+            column.use_property_split=True
+            column.prop(locator.locator_prop, "loc_spline_rail_cam_name", text="Name")
+            column.prop(locator.locator_prop, "loc_spline_behaviour")
+            column.prop(locator.locator_prop, "loc_spline_min_radius")
+            column.prop(locator.locator_prop, "loc_spline_max_radius")
+            column.prop(locator.locator_prop, "loc_spline_track_rail")
+            column.prop(locator.locator_prop, "loc_spline_track_dist")
+            column.prop(locator.locator_prop, "loc_spline_reverse_sense")
+            column.prop(locator.locator_prop, "loc_spline_FOV")
+            column.prop(locator.locator_prop, "loc_spline_target_offset")
+            column.prop(locator.locator_prop, "loc_spline_axis_play")
+            column.prop(locator.locator_prop, "loc_spline_position_lag")
+            column.prop(locator.locator_prop, "loc_spline_target_lag")
+
+        # Type 5 (ZONE) Support
+        if locator.locator_prop.loctype == 'ZONE':
+            box.prop(locator.locator_prop, "dynaload_string")
+            box.operator("wm.url_open", text="Dyna Load Data Strings", icon='QUESTION').url="https://docs.donutteam.com/docs/hitandrun/misc/dyna-load-data"
+
+        # Type 6 (OCCLUSION) support
+        if locator.locator_prop.loctype == 'OCCLUSION':
+            box.prop(locator.locator_prop, "occlusions")
+
+        
+        # Type 7 (INTERIOR) and 8 (DIRECTION) Support
+        if locator.locator_prop.loctype == 'INTERIOR':
+            row = box.row()
+            row.label(text="Interior Name")
+            row.prop(locator.locator_prop, "interior_name", text="")
+
+        if locator.locator_prop.loctype in ['INTERIOR', 'DIRECTION']:
+            box.prop(locator.locator_prop, "rotation_matrix")
+
+        if locator.locator_prop.loctype == 'DIRECTION' and locator.name not in ['InteriorEntryEnd','InteriorEntryStart']:
+            col = box.column()
+            col.label(text="Type 8 (Direction) locator crashes the game",icon='ERROR')
+            col.label(text="if its name is not 'InteriorEntryEnd' or 'InteriorEntryStart'")
+
+        # Type 9 (ACTION) Support
+        if locator.locator_prop.loctype == 'ACTION':
+            box.prop(locator.locator_prop, "action_type")
+            box.prop(locator.locator_prop, "action_unknown")
+            box.prop(locator.locator_prop, "action_unknown2")
+            
+        # Type 12 (CAM) Support
+        if locator.locator_prop.loctype == 'CAM':
+            box.prop(locator.locator_prop, "cam_obj")
+            if locator.locator_prop.cam_obj:
+                box.prop(locator.locator_prop.cam_obj.data, "angle")
+            else:
                 row = box.row()
-                row.label(text="Spline")
-                row.prop(locator.locator_prop, "loc_spline", text="")
-                col = box.column()
-                row = col.row()
-                row.operator("object.loc_spline_create", icon='PLUS')
-                row.enabled = not locator.locator_prop.loc_spline
-                row = col.row()
-                row.operator("object.loc_spline_delete", icon='TRASH')
-                row.enabled = bool(locator.locator_prop.loc_spline)
-                row = col.row()
-                row.label(text="Unknown")
-                row.prop(locator.locator_prop, "loc_spline_cam_name", text="")
+                row.label(text="No camera found!")
+                row.operator("object.loc_cam_create", icon='PLUS', text="Create Camera")
+            box.prop(locator.locator_prop, "cam_follow_player")
 
-            # Type 5 (ZONE) Support
-            if locator.locator_prop.loctype == 'ZONE':
-                box.prop(locator.locator_prop, "dynaload_string")
-                box.operator("wm.url_open", text="Dyna Load Data Strings", icon='QUESTION').url="https://docs.donutteam.com/docs/hitandrun/misc/dyna-load-data"
-
-            # Type 6 (OCCLUSION) support
-            if locator.locator_prop.loctype == 'OCCLUSION':
-                box.prop(locator.locator_prop, "occlusions")
-
-            
-            # Type 7 (INTERIOR) and 8 (DIRECTION) Support
-            if locator.locator_prop.loctype == 'INTERIOR':
-                row = box.row()
-                row.label(text="Interior Name")
-                row.prop(locator.locator_prop, "interior_name", text="")
-
-            if locator.locator_prop.loctype in ['INTERIOR', 'DIRECTION']:
-                box.prop(locator.locator_prop, "rotation_matrix")
-
-            # Type 9 (ACTION) Support
-            if locator.locator_prop.loctype == 'ACTION':
-                box.prop(locator.locator_prop, "action_type")
-                box.prop(locator.locator_prop, "action_unknown")
-                box.prop(locator.locator_prop, "action_unknown2")
-                
-            # Type 12 (CAM) Support
-            if locator.locator_prop.loctype == 'CAM':
-                box.prop(locator.locator_prop, "cam_obj")
-                if locator.locator_prop.cam_obj:
-                    box.prop(locator.locator_prop.cam_obj.data, "angle")
-                else:
-                    row = box.row()
-                    row.label(text="No camera found!")
-                    row.operator("object.loc_cam_create", icon='PLUS', text="Create Camera")
-                box.prop(locator.locator_prop, "cam_follow_player")
-
-            
-            # Type 13 (PED) Support
-            if locator.locator_prop.loctype == 'PED':
-                box.prop(locator.locator_prop, "ped_group")
+        
+        # Type 13 (PED) Support
+        if locator.locator_prop.loctype == 'PED':
+            box.prop(locator.locator_prop, "ped_group")
                 
 to_register = [
     FileExportLocators,

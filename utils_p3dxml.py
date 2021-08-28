@@ -1,6 +1,9 @@
 from xml.dom import minidom
 import re
 import os
+import base64
+import struct
+import math
 from mathutils import Matrix, Vector
 import xml.etree.cElementTree as ET
 RDS = '0x3000009'  # Road Data Segment
@@ -241,3 +244,54 @@ def find_locrot_LOM(loc):
     q = tran_mat.to_quaternion()
     q.y, q.z = q.z, q.y
     return location, q.to_euler()
+
+def B64ToRailCam(DataString : str) -> dict:
+    """Convert 'Data' string from 300000a Rail Cam chunk data"""
+    DataDict = {}
+    DataBytes = base64.standard_b64decode(DataString)
+    DataDict['Behaviour']       = struct.unpack('<i', DataBytes[4*0:4*1])[0]
+    DataDict['MinRadius']       = round(struct.unpack('<f', DataBytes[4*1:4*2])[0],6)
+    DataDict['MaxRadius']       = round(struct.unpack('<f', DataBytes[4*2:4*3])[0],6)
+    DataDict['TrackRail']       = struct.unpack('<i', DataBytes[4*3:4*4])[0]
+    DataDict['TrackDist']       = round(struct.unpack('<f', DataBytes[4*4:4*5])[0],6)
+    DataDict['ReverseSense']    = struct.unpack('<i', DataBytes[4*5:4*6])[0]
+    DataDict['FOV']             = math.radians(round(struct.unpack('<f', DataBytes[4*6:4*7])[0],6))
+
+    DataDict['TargetOffset'] = Vector((
+        round(struct.unpack('<f', DataBytes[4*7:4*8])[0],4),
+        round(struct.unpack('<f', DataBytes[4*9:4*10])[0],4),
+        round(struct.unpack('<f', DataBytes[4*8:4*9])[0],4),
+    ))
+    
+    DataDict['AxisPlay'] = Vector((
+        round(struct.unpack('<f', DataBytes[4*10:4*11])[0],4),
+        round(struct.unpack('<f', DataBytes[4*12:4*13])[0],4),
+        round(struct.unpack('<f', DataBytes[4*11:4*12])[0],4),
+    ))
+
+    DataDict['PositionLag']     = round(struct.unpack('<f', DataBytes[4*13:4*14])[0],6)
+    DataDict['TargetLag']       = round(struct.unpack('<f', DataBytes[4*14:4*15])[0],6)
+    return DataDict
+
+
+def RailCamToB64(DataDict : dict) -> str:
+    DataBytes = b''.join([
+        struct.pack('<i',DataDict['Behaviour']),
+        struct.pack('<f',DataDict['MinRadius']),
+        struct.pack('<f',DataDict['MaxRadius']),
+        struct.pack('<i',DataDict['TrackRail']),
+        struct.pack('<f',DataDict['TrackDist']),
+        struct.pack('<i',DataDict['ReverseSense']),
+        struct.pack('<f',math.degrees(DataDict['FOV'])),
+        struct.pack('<f',DataDict['TargetOffset'].x),
+        struct.pack('<f',DataDict['TargetOffset'].z),
+        struct.pack('<f',DataDict['TargetOffset'].y),
+
+        struct.pack('<f',DataDict['AxisPlay'].x),
+        struct.pack('<f',DataDict['AxisPlay'].z),
+        struct.pack('<f',DataDict['AxisPlay'].y),
+
+        struct.pack('<f',DataDict['PositionLag']),
+        struct.pack('<f',DataDict['TargetLag']),
+    ])
+    return str(base64.standard_b64encode(DataBytes))[2:-1]

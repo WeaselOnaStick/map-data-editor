@@ -90,6 +90,7 @@ def rs_create_base(collection, a=None, b=None, c=None, d=None, name='RoadShape')
     collection.objects.link(r_obj)
     r_obj.show_in_front = True
     r_obj.display_type = 'WIRE'
+    r_obj.show_all_edges = True
     return r_obj
 
 

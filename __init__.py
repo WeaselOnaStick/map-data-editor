@@ -51,17 +51,18 @@ class WMDE_Preferences(bpy.types.AddonPreferences):
 classes = [WMDE_Preferences]
 subclasses = [RoadClasses, PathClasses, FenceClasses, LocatorClasses, TreeClasses, InstanceClasses]
 
-class WOASdebugOperator(bpy.types.Operator):
-    bl_idname = "object.woasdebug"
-    bl_label = "WOASdebug"
+# class WOASdebugOperator(bpy.types.Operator):
+#     bl_idname = "object.woasdebug"
+#     bl_label = "WOASdebug"
 
-    def execute(self, context):
-        from .utils_p3dxml import RailCamToB64
-        input_data = ""
-        print(RailCamToB64(input_data))
-        return {'FINISHED'}
+#     def execute(self, context):
+#         from .utils_p3dxml import B64ToRailCam
+#         from .utils_p3dxml import RailCamToB64
+#         input_data = "AgAAAM3MTD7NzMw+AQAAAG8SAzsAAAAAAABUQgAAgL/2KFy+AAAAAArXIz0AAAAAAAAAQZqZmT6amZk+"
+#         print(B64ToRailCam(input_data))
+#         return {'FINISHED'}
 
-classes.append(WOASdebugOperator)
+# classes.append(WOASdebugOperator)
 
 for cls in subclasses:
     if cls.to_register:

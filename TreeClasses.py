@@ -9,7 +9,7 @@ from .utils_p3dxml import *
 class LoadIntersectPoints(bpy.types.Operator, ImportHelper):
     """Select a p3dxml file that contains Intersect (0x3F00003) chunks"""
     bl_idname = 'import_scene.intersect_points'
-    bl_label = "Load intersect markers"
+    bl_label = "Load Intersect Markers"
     filename_ext = '.p3dxml'
     filter_glob: bpy.props.StringProperty(default='*.p3dxml',
                                           options={'HIDDEN'},

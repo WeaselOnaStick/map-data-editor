@@ -1,8 +1,9 @@
-from math import log2
-from mathutils import Vector
-import bpy
+#I honestly have no idea how I wrote all this mess. But it works and that's what matters
+from mathutils import Vector, geometry
+import mathutils
 from .utils_p3dxml import *
-import re
+import bpy
+import bmesh
 
 def point_in_bound(a : Vector, bound_bl : Vector, bound_ur : Vector, ignore_z = True):
     if any([
@@ -20,7 +21,7 @@ def point_in_bound(a : Vector, bound_bl : Vector, bound_ur : Vector, ignore_z = 
             return False
     return True
 
-def snap_int_to_divisible(x : Vector, a, up = True):
+def snap_int_to_divisible(x, a, up = True):
     if x % a != 0:
         x = x - (x % a) + a*int(up)
     return x
@@ -111,7 +112,6 @@ class Tree:
     
     def __str__(self):
         return self.root.str_inorder()
-
 
 def grid_generate(gridsize = 20, marker_set = []):
     treemin = Vector((min([x[0] for x in marker_set]),min([x[1] for x in marker_set]),min([x[2] for x in marker_set])))
@@ -210,3 +210,70 @@ def export_tree(Tree : Tree, filepath):
         # write_val(TN2, "WorldMeshLimit", 0)
 
     write_ET(root, filepath)
+
+def create_markers_from_meshes(objects) -> list:
+    """Takes MESH objects, returns a list of marker locations"""
+
+    marker_locs = []
+    bm = bmesh.new()
+
+    for o in objects:
+        o_mesh = bpy.types.Mesh(o.data)
+        bm.from_mesh(o_mesh)
+        mw = o.matrix_world
+        mwi = mw.inverted()
+        
+        #get object bounds
+        corners = [o.matrix_world @ Vector(x) for x in o.bound_box]
+
+        #get min/max X/Y bound values
+        
+        minX = snap_int_to_divisible(min([c.x for c in corners]),20,False)
+        minY = snap_int_to_divisible(min([c.y for c in corners]),20,False)
+        maxX = snap_int_to_divisible(max([c.x for c in corners]),20,True)
+        maxY = snap_int_to_divisible(max([c.y for c in corners]),20,True)
+
+        minV = Vector((minX,minY,0))
+        maxV = Vector((maxX,maxY,0))
+        height = max([c.z for c in corners])+5
+
+        #cast rays from square centers and add marker to Vector List on hit
+        i,j = minV.x+10,minV.y+10
+        while i<maxV.x and j<maxV.y:
+            ray_cast = o.ray_cast(mwi @ Vector((i,j,height)),mwi @ Vector((0,0,-1)))
+            if ray_cast[0]:
+                #append actual object.data.vertices to Vector List
+                marker_locs.append(Vector((i,j)).to_3d())
+            i = i + 20
+            if i>maxV.x:
+                j = j + 20
+                i = minV.x+10
+        
+        marker_locs = marker_locs + [mw @ x.co for x in o.data.vertices]
+
+        #generate X/Y grid of "slicers" for intersect checking
+        #intersect every edge of the mesh with "slicers", append intersection points (if equal) to Vector Lest
+        i,j = minV.x-20,minV.y-20
+
+        while i<maxV.x:
+            for edge in [x for x in bm.edges if x.is_boundary]:
+                edgeA,edgeB = [(mw @ x.co).xy for x in edge.verts]
+                intersect_point = geometry.intersect_line_line_2d(edgeA,edgeB,Vector((i,minV.y)),Vector((i,maxV.y)))
+                if intersect_point:
+                    marker_locs.append(intersect_point.to_3d())
+            i = i + 20
+        
+        while j<maxV.y:
+            for edge in [x for x in bm.edges if x.is_boundary]:
+                edgeA,edgeB = [(mw @ x.co).xy for x in edge.verts]
+                intersect_point = geometry.intersect_line_line_2d(edgeA,edgeB,Vector((minV.x,j)),Vector((maxV.x,j)))
+                if intersect_point:
+                    marker_locs.append(intersect_point.to_3d())
+            j = j + 20    
+
+
+    #repeat for all mesh objects
+
+    #reduce Vector List to only one per 20x20 square(?)
+    bm.free()
+    return marker_locs

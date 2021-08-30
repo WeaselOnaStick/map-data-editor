@@ -6,6 +6,14 @@ from . import TreeManager as TM
 from os import path
 from .utils_p3dxml import *
 
+def GetMarkersCollection(context):
+    if "IntersectMarkers" not in context.scene.collection.children:
+            marker_col = bpy.data.collections.new("IntersectMarkers")
+            context.scene.collection.children.link(marker_col)
+    else:
+        marker_col = context.scene.collection.children["IntersectMarkers"]
+    return marker_col
+
 class LoadIntersectPoints(bpy.types.Operator, ImportHelper):
     """Select a p3dxml file that contains Intersect (0x3F00003) chunks"""
     bl_idname = 'import_scene.intersect_points'
@@ -15,11 +23,7 @@ class LoadIntersectPoints(bpy.types.Operator, ImportHelper):
                                           options={'HIDDEN'},
                                           maxlen=255)
     def execute(self, context):
-        if "IntersectMarkers" not in context.scene.collection.children:
-            marker_col = bpy.data.collections.new("IntersectMarkers")
-            context.scene.collection.children.link(marker_col)
-        else:
-            marker_col = context.scene.collection.children["IntersectMarkers"]
+        marker_col = GetMarkersCollection(context)
         root = terra_read(self.filepath)
         for i in find_chunks(root, "0x3F00003"):
             bbox = find_chunks(i, "0x10003")[0]
@@ -32,6 +36,46 @@ class LoadIntersectPoints(bpy.types.Operator, ImportHelper):
                 b.location = find_xyz(bbox, "High")
                 marker_col.objects.link(b)
         return {'FINISHED'}                                    
+
+
+class CreateMarkersFromMeshOperator(bpy.types.Operator):
+    """Create intersect markers from selected mesh objects"""
+    bl_idname = "object.create_intersect_markers_from_mesh"
+    bl_label = "Create Markers From Mesh"
+    bl_options = {'REGISTER'}
+
+    #check that we actually have mesh objects selected
+    @classmethod
+    def poll(cls, context):
+        return context.selected_objects and 'MESH' in [x.type for x in context.selected_objects]
+         
+
+    def execute(self, context):
+        marker_col = GetMarkersCollection(context)
+        
+        mesh_objs = [x for x in context.selected_objects if x.type == 'MESH']
+
+        depsgraph = context.evaluated_depsgraph_get()
+        mesh_objs = [x.evaluated_get(depsgraph) for x in mesh_objs]
+
+        markers_locs = TM.create_markers_from_meshes(mesh_objs)
+        for loc in markers_locs:
+            a = bpy.data.objects.new("iMarker", None)
+            a.location = loc
+            marker_col.objects.link(a)
+        return {'FINISHED'}
+
+class ResetMarkers(bpy.types.Operator):
+    """Reset intersect markers"""
+    bl_idname = "object.reset_intersect_markers"
+    bl_label = "Reset Intersect Markers"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        markers_col = GetMarkersCollection(context)
+        for obj in markers_col.objects:
+            bpy.data.objects.remove(obj)
+        return {'FINISHED'}
 
 class GridTreeExport(bpy.types.Operator, ExportHelper):
     """Generate Tree based on Intersect Markers"""
@@ -85,10 +129,14 @@ class MDE_PT_TreeFileManagment(bpy.types.Panel, MiscModule):
     def draw(self, context):
         layout = self.layout
         layout.operator('import_scene.intersect_points', icon='IMPORT')
+        layout.operator('object.create_intersect_markers_from_mesh', icon='SHADERFX')
+        layout.operator('object.reset_intersect_markers', icon='TRASH')
         layout.operator('export_scene.grid_tree', icon='EXPORT')
 
 to_register = [
     GridTreeExport,
     LoadIntersectPoints,
+    CreateMarkersFromMeshOperator,
+    ResetMarkers,
     MDE_PT_TreeFileManagment,
 ]

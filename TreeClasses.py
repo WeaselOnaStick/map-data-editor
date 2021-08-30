@@ -39,7 +39,7 @@ class LoadIntersectPoints(bpy.types.Operator, ImportHelper):
 
 
 class CreateMarkersFromMeshOperator(bpy.types.Operator):
-    """Create intersect markers from selected mesh objects"""
+    """Create intersect markers from selected mesh objects.\n(Might need to apply transforms)"""
     bl_idname = "object.create_intersect_markers_from_mesh"
     bl_label = "Create Markers From Mesh"
     bl_options = {'REGISTER'}
@@ -56,9 +56,9 @@ class CreateMarkersFromMeshOperator(bpy.types.Operator):
         mesh_objs = [x for x in context.selected_objects if x.type == 'MESH']
 
         depsgraph = context.evaluated_depsgraph_get()
-        mesh_objs = [x.evaluated_get(depsgraph) for x in mesh_objs]
+        #mesh_objs = [x.evaluated_get(depsgraph) for x in mesh_objs]
 
-        markers_locs = TM.create_markers_from_meshes(mesh_objs)
+        markers_locs = TM.create_markers_from_meshes(mesh_objs,depsgraph)
         for loc in markers_locs:
             a = bpy.data.objects.new("iMarker", None)
             a.location = loc

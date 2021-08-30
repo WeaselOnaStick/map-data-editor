@@ -1,9 +1,12 @@
 #I honestly have no idea how I wrote all this mess. But it works and that's what matters
-from mathutils import Vector, geometry
+from math import pi
+from mathutils import Euler, Vector, geometry
 import mathutils
 from .utils_p3dxml import *
 import bpy
 import bmesh
+import sys
+from mathutils.bvhtree import BVHTree
 
 def point_in_bound(a : Vector, bound_bl : Vector, bound_ur : Vector, ignore_z = True):
     if any([
@@ -22,9 +25,7 @@ def point_in_bound(a : Vector, bound_bl : Vector, bound_ur : Vector, ignore_z = 
     return True
 
 def snap_int_to_divisible(x, a, up = True):
-    if x % a != 0:
-        x = x - (x % a) + a*int(up)
-    return x
+    return x - (x % a) + a*int(up)
 
 def snap_vector_to_divisible(x : Vector, a, up = True):
     x = x.copy()
@@ -211,20 +212,19 @@ def export_tree(Tree : Tree, filepath):
 
     write_ET(root, filepath)
 
-def create_markers_from_meshes(objects) -> list:
+def create_markers_from_meshes(objects,depsgraph) -> list:
     """Takes MESH objects, returns a list of marker locations"""
+    #TODO somehow fix rotation not being applied
 
     marker_locs = []
-    bm = bmesh.new()
 
     for o in objects:
-        o_mesh = bpy.types.Mesh(o.data)
-        bm.from_mesh(o_mesh)
-        mw = o.matrix_world
-        mwi = mw.inverted()
+        bvh = BVHTree.FromObject(o,depsgraph,epsilon=0.0)
+        mw  = o.matrix_world
+        mwi = o.matrix_world.inverted()
         
         #get object bounds
-        corners = [o.matrix_world @ Vector(x) for x in o.bound_box]
+        corners = [mw @ Vector(x) for x in o.bound_box]
 
         #get min/max X/Y bound values
         
@@ -238,42 +238,31 @@ def create_markers_from_meshes(objects) -> list:
         height = max([c.z for c in corners])+5
 
         #cast rays from square centers and add marker to Vector List on hit
-        i,j = minV.x+10,minV.y+10
-        while i<maxV.x and j<maxV.y:
-            ray_cast = o.ray_cast(mwi @ Vector((i,j,height)),mwi @ Vector((0,0,-1)))
-            if ray_cast[0]:
+        i,j = minV.x,minV.y
+        while i<maxV.x or j<maxV.y:       
+            ray_origin = mwi @ Vector((i,j,height))
+            ray_direction = mwi @ Vector((0,0,-sys.maxsize))
+            #bpy.ops.object.empty_add(location=(mw @ ray_origin))
+            
+            hit_loc = bvh.ray_cast(ray_origin,ray_direction)[0]
+            if hit_loc:
+                #print("hit!")
+                hit_loc = mw @ Vector(hit_loc)
                 #append actual object.data.vertices to Vector List
-                marker_locs.append(Vector((i,j)).to_3d())
+                marker_locs.append(hit_loc)
             i = i + 20
             if i>maxV.x:
                 j = j + 20
-                i = minV.x+10
+                i = minV.x
         
         marker_locs = marker_locs + [mw @ x.co for x in o.data.vertices]
-
-        #generate X/Y grid of "slicers" for intersect checking
-        #intersect every edge of the mesh with "slicers", append intersection points (if equal) to Vector Lest
-        i,j = minV.x-20,minV.y-20
-
-        while i<maxV.x:
-            for edge in [x for x in bm.edges if x.is_boundary]:
-                edgeA,edgeB = [(mw @ x.co).xy for x in edge.verts]
-                intersect_point = geometry.intersect_line_line_2d(edgeA,edgeB,Vector((i,minV.y)),Vector((i,maxV.y)))
-                if intersect_point:
-                    marker_locs.append(intersect_point.to_3d())
-            i = i + 20
-        
-        while j<maxV.y:
-            for edge in [x for x in bm.edges if x.is_boundary]:
-                edgeA,edgeB = [(mw @ x.co).xy for x in edge.verts]
-                intersect_point = geometry.intersect_line_line_2d(edgeA,edgeB,Vector((minV.x,j)),Vector((maxV.x,j)))
-                if intersect_point:
-                    marker_locs.append(intersect_point.to_3d())
-            j = j + 20    
-
-
+        # marker_locs = marker_locs + [
+        #     minV,
+        #     Vector((minV.x,maxV.y,0)),
+        #     Vector((maxV.x,minV.y,0)),
+        #     maxV,
+        # ]
     #repeat for all mesh objects
 
     #reduce Vector List to only one per 20x20 square(?)
-    bm.free()
     return marker_locs

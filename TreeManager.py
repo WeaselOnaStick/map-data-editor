@@ -212,6 +212,15 @@ def export_tree(Tree : Tree, filepath):
 
     write_ET(root, filepath)
 
+def add_salt(x : Vector, salt_amount = 3):
+    """returns 4 vectors with salt_amount added in 4 XY directions"""
+    return [
+        x + Vector((salt_amount,0,0)),
+        x + Vector((-salt_amount,0,0)),
+        x + Vector((0,salt_amount,0)),
+        x + Vector((0,-salt_amount,0)),
+    ]
+
 def create_markers_from_meshes(objects,depsgraph) -> list:
     """Takes MESH objects, returns a list of marker locations"""
     #TODO somehow fix rotation not being applied
@@ -249,19 +258,14 @@ def create_markers_from_meshes(objects,depsgraph) -> list:
                 #print("hit!")
                 hit_loc = mw @ Vector(hit_loc)
                 #append actual object.data.vertices to Vector List
-                marker_locs.append(hit_loc)
+                marker_locs = marker_locs + add_salt(hit_loc)
             i = i + 20
             if i>maxV.x:
                 j = j + 20
                 i = minV.x
         
+        
         marker_locs = marker_locs + [mw @ x.co for x in o.data.vertices]
-        # marker_locs = marker_locs + [
-        #     minV,
-        #     Vector((minV.x,maxV.y,0)),
-        #     Vector((maxV.x,minV.y,0)),
-        #     maxV,
-        # ]
     #repeat for all mesh objects
 
     #reduce Vector List to only one per 20x20 square(?)

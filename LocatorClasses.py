@@ -70,6 +70,7 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
         name="Rail Camera Name",
         default="RailCam"
     )
+    #TODO: RailCam Behaviour -  set soft min and max to 1 and 2. 1 = Distance, 2 = Projection
     loc_spline_behaviour: bpy.props.IntProperty(
         name="Behaviour",
         default=1,
@@ -111,6 +112,15 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
         unit='LENGTH',
         precision=4,
     )
+    #TODO RailCam PlayAxis insane hackery
+    # (From leaked source) (Can't confirm what anything actually does) SHAR uses this in a very hacky way. Maybe replace this with:
+    # x value is for transition rate
+    # y == 1 to disable FOV lag
+    # z is a float that's then cast to an int and compared bitwise to enable certain features:
+    # z & 0x1 - Car Only
+    # z & 0x2 - Cut In Out
+    # z & 0x4 - Reset
+    # z & 0x8 - On Foot Only (Supposed to crash if CarOnly is also enabled but doesn't)
     loc_spline_axis_play: bpy.props.FloatVectorProperty(
         name="Axis Play",
         size=3,

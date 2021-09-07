@@ -119,27 +119,6 @@ class PathCreateCircular(bpy.types.Operator):
         path_create_circular(cursor=context.scene.cursor, kwargs=self.as_keywords())
         return {'FINISHED'}
 
-class PathApplyTran(bpy.types.Operator):
-    bl_idname = 'object.path_apply_tran'
-    bl_label = 'Apply Path Transforms'
-
-    @classmethod
-    def poll(cls, context):
-        if not context.selected_objects:
-            return False
-        for ob in context.selected_objects:
-            if ob.type != 'CURVE':
-                return False
-        return True
-
-    def execute(self, context):
-        bpy.ops.object.mode_set(mode='OBJECT')
-        objs = context.selected_objects
-        for fobj in objs:
-            fobj.data.dimensions = '3D'
-        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-        return{'FINISHED'}
-
 class PathModule:
 
     @classmethod
@@ -181,14 +160,12 @@ class MDE_PT_Paths(bpy.types.Panel, PathModule):
         layout = self.layout
         layout.operator((PathCreateBasic.bl_idname), icon='CURVE_PATH')
         layout.operator((PathCreateCircular.bl_idname), icon='LIGHT_POINT')
-        layout.operator((PathApplyTran.bl_idname), icon='CHECKMARK')
 
 to_register = [
     FileExportPaths,
     FileImportPaths,
     MDE_PT_PathFileManagement,
     MDE_PT_Paths,
-    PathApplyTran,
     PathCreateBasic,
     PathCreateCircular,
     ]

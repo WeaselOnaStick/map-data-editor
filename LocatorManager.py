@@ -404,12 +404,12 @@ def export_locators(objs, filepath):
             write_val(loc_data, "Unknown2", 3)
             write_val(loc_data, "Unknown3", 1)
             un_data = ET.SubElement(loc_data, "Value", {"Name": "Unknown"})
-            ET.SubElement(un_data, "Item", {"Value": loc_obj.locator_prop.action_type})
             if loc_obj.locator_prop.action_type == 'Wrench':
                 loc_obj.locator_prop.action_unknown = loc_obj.name
                 loc_obj.locator_prop.action_unknown2 = loc_obj.name
             ET.SubElement(un_data, "Item", {"Value": loc_obj.locator_prop.action_unknown})
             ET.SubElement(un_data, "Item", {"Value": loc_obj.locator_prop.action_unknown2})
+            ET.SubElement(un_data, "Item", {"Value": loc_obj.locator_prop.action_type})
 
         # Type 12 (CAM) Support
         if loc_obj.locator_prop.loctype == 'CAM':

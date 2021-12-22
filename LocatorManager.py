@@ -352,7 +352,7 @@ def export_locators(objs, filepath):
         
         # Type 3 (CAR) Support
         if loc_obj.locator_prop.loctype == 'CAR':
-            write_val(loc_data, "Rotation", degrees(loc_obj.matrix_world.to_euler()[2]))
+            write_val(loc_data, "Rotation", loc_obj.matrix_world.to_euler()[2])
             write_val(loc_data, "ParkedCar", int(loc_obj.locator_prop.parked_car))
             if loc_obj.locator_prop.free_car:
                 write_val(loc_data, "FreeCar", loc_obj.locator_prop.free_car)

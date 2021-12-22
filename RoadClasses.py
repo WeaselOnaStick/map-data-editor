@@ -63,6 +63,7 @@ class FileImportRoads(bpy.types.Operator, ImportHelper):
 
 class FileExportRoadsAndIntersects(bpy.types.Operator, ExportHelper):
     #TODO Export CustomLimits.ini limits
+    #TODO Export CustomRoadBehaviour xml(?)
     #TODO "Visible only" checkbox
     bl_idname = 'export_scene.roads_p3dxml'
     bl_label = 'Export Roads...'
@@ -585,6 +586,8 @@ class MDE_PT_RoadFileManagement(bpy.types.Panel, RoadModule):
 
 
 class MDE_PT_Intersections(bpy.types.Panel, RoadModule):
+    #TODO Button to toggle intersection names
+    #TODO Button to toggle being only able to select intersections(?)
     bl_label = 'Intersections'
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
@@ -605,6 +608,7 @@ class MDE_PT_Intersections(bpy.types.Panel, RoadModule):
 
 
 class MDE_PT_Roads(bpy.types.Panel, RoadModule):
+    #TODO Operator to change many road properties at once(?)
     bl_label = "Roads"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'

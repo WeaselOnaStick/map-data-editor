@@ -59,10 +59,29 @@ class FileExportPaths(bpy.types.Operator, ExportHelper):
                 self.report({'ERROR'}, 'No "Paths" collection found')
                 return {'CANCELLED'}
             objs = [x for x in bpy.data.collections['Paths'].objects if object_is_path_curve(x)]
-        result = export_paths(self.filepath, objs)
+
+        invalid_objs = [] # Apparently this game freezes and dies if a Path has more than exactly 32 points. Go figure
+        for path_obj in objs:
+            if len(path_obj.data.splines[0].points) > 32:
+                invalid_objs.append(path_obj)
+
+        if invalid_objs:
+            valid_objs = [x for x in objs if not x in invalid_objs]
+                
+
+        result = export_paths(self.filepath, valid_objs)
         if result == 0:
             self.report({'WARNING', "No paths exported"})
             return {'CANCELLED'}
+        elif invalid_objs and not valid_objs:
+            self.report({'ERROR'}, "All paths exceed maximum length (32)")
+            return {'CANCELLED'}
+        elif invalid_objs and valid_objs:
+            self.report({'WARNING'}, f"{len(invalid_objs)} paths exceeded maximum length (32), have been selected and not exported to prevent crash")
+            bpy.ops.object.select_all(action='DESELECT')
+            for o in invalid_objs:
+                o.select_set(True)
+            return {'FINISHED'}
         else:
             self.report({'INFO'}, f"Successfully exported {result} paths to {self.filepath}")
             return {'FINISHED'}

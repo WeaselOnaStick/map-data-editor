@@ -8,12 +8,7 @@ from .utils_p3dxml import *
 add_object = bpy_extras.object_utils.object_data_add
 
 
-def inter_create(inter_name, position, radius, behaviour):
-    if 'Intersections' not in bpy.data.collections:
-        int_col = bpy.data.collections.new('Intersections')
-        bpy.context.scene.collection.children.link(int_col)
-    else:
-        int_col = bpy.data.collections['Intersections']
+def inter_create(int_col : bpy.types.Collection, inter_name, position, radius, behaviour):
     inter = bpy.data.objects.new(inter_name, None)
     inter.inter_road_beh = behaviour
     inter.empty_display_type = 'SPHERE'

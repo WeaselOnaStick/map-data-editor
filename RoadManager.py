@@ -140,7 +140,7 @@ def misc_create_bezier(context, collection):
     collection.objects.link(curve_obj)
     curve_obj.display_type = 'WIRE'
     curve_obj.show_in_front = True
-    curve_obj.location = context.scene.cursor.location
+    curve_obj.location = context.scene.cursor.location #< Fixed "prepare bezier curve" operator to place curve at cursor (See previous commit, oops)
 
 
 def rs_edit_upd(obj):

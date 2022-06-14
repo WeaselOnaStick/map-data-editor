@@ -1,3 +1,4 @@
+from typing import Collection
 import bpy
 from bpy.props import *
 from bpy_extras.io_utils import ExportHelper, ImportHelper
@@ -114,6 +115,16 @@ class FileExportRoadsAndIntersects(bpy.types.Operator, ExportHelper):
             {'INFO'}, f"Successfully exported {os.path.basename(self.filepath)}")
         return {'FINISHED'}
 
+def GetIntersectionsCollection(context) -> bpy.types.Collection:
+    if 'Intersections' not in bpy.data.collections:
+        int_col = bpy.data.collections.new('Intersections')
+        context.scene.collection.children.link(int_col)
+    else:
+        int_col = bpy.data.collections['Intersections']
+    return int_col
+
+def GetIntersections(context) -> list:
+    return GetIntersectionsCollection(context).objects
 
 class IntersectCreate(bpy.types.Operator):
     """Create a road intersection"""
@@ -144,18 +155,27 @@ class IntersectCreate(bpy.types.Operator):
         options={'HIDDEN'}
         )
 
-    
     def invoke(self, context, event):
         self.location = context.scene.cursor.location
         return self.execute(context)
 
     def execute(self, context):
-        RoadManager.inter_create(self.name, self.location,
-                                 self.radius, self.road_beh)
+        RoadManager.inter_create(GetIntersectionsCollection(context), self.name, self.location, self.radius, self.road_beh)
         return {'FINISHED'}
 
-def is_intersection(object):
-    return object.type == 'EMPTY' and object.empty_display_type == 'SPHERE'
+def is_intersection(object : bpy.types.Object, context):
+    return object.type == 'EMPTY' and object.empty_display_type == 'SPHERE' and object.users_collection[0] == GetIntersectionsCollection(context)
+
+class ToggleIntersectionNames(bpy.types.Operator):
+    """Toggle Intersection Names Visibility"""
+    bl_idname = 'object.intersection_names_toggle'
+    bl_label = 'Toggle Intersection Names Visibility'
+
+    def execute(self, context):
+        context.window_manager.intersection_names_visible = not context.window_manager.intersection_names_visible
+        for int_obj in GetIntersectionsCollection(context).objects:
+            int_obj.show_name = context.window_manager.intersection_names_visible
+        return {'FINISHED'}
 
 class RoadEditOperator:
 
@@ -581,12 +601,11 @@ class MDE_PT_RoadFileManagement(bpy.types.Panel, RoadModule):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator('import_scene.roads_p3dxml', icon='IMPORT')
-        layout.operator('export_scene.roads_p3dxml', icon='EXPORT')
+        layout.operator(FileImportRoads.bl_idname, icon='IMPORT')
+        layout.operator(FileExportRoadsAndIntersects.bl_idname, icon='EXPORT')
 
 
 class MDE_PT_Intersections(bpy.types.Panel, RoadModule):
-    #TODO Button to toggle intersection names
     #TODO Button to toggle being only able to select intersections(?)
     bl_label = 'Intersections'
     bl_space_type = 'VIEW_3D'
@@ -601,14 +620,16 @@ class MDE_PT_Intersections(bpy.types.Panel, RoadModule):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator('object.intersect_create', icon='PLUS')
-        if context.object and is_intersection(context.object):
+        ToggleIntersectionNames
+        layout.operator(IntersectCreate.bl_idname, icon='PLUS')
+        layout.operator(ToggleIntersectionNames.bl_idname, text = 'Toggle Names', icon='HIDE_OFF')
+        if context.object and is_intersection(context.object, context):
             layout.prop(context.object, 'scale', index=0, text='Radius')
             layout.prop(context.object, 'inter_road_beh')
 
 
 class MDE_PT_Roads(bpy.types.Panel, RoadModule):
-    #TODO Operator to change many road properties at once(?)
+    #TODO Operator to batch change properties of many roads at once(?)
     bl_label = "Roads"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
@@ -624,15 +645,15 @@ class MDE_PT_Roads(bpy.types.Panel, RoadModule):
     def draw(self, context):
         this_col = get_current_coll(context)
         layout = self.layout
-        layout.operator("object.road_create", icon='PLUS')
+        layout.operator(RoadCreate.bl_idname, icon='PLUS')
         if not get_current_coll(context):
             return
         if not this_col.road_node_prop.to_export:
             return
-        layout.operator("object.road_delete", icon='TRASH')
-        layout.operator("object.road_duplicate", icon='DUPLICATE')
-        layout.operator("object.road_create_adjacent", icon='UV_ISLANDSEL')
-        layout.operator("object.road_separate", icon='UNLINKED')
+        layout.operator(RoadDelete.bl_idname, icon='TRASH')
+        layout.operator(RoadDuplicate.bl_idname, icon='DUPLICATE')
+        layout.operator(RoadCreateAdjacent.bl_idname, icon='UV_ISLANDSEL')
+        layout.operator(RoadSeparate.bl_idname, icon='UNLINKED')
         box = layout.box()
         box.label(text=f"{this_col.name} Road properties:")
         grid = box.grid_flow(row_major=False)
@@ -666,31 +687,31 @@ class MDE_PT_RoadShapes(bpy.types.Panel, RoadModule):
             return
         grd = layout.grid_flow()
         grd.label(text='Editing')
-        grd.operator('object.road_shape_select', icon='RESTRICT_SELECT_OFF')
-        grd.operator('object.road_shape_update', icon='FILE_REFRESH')
-        grd.operator('object.road_shape_adjust_width', icon='ARROW_LEFTRIGHT')
-        grd.operator('object.road_shape_flip', icon='UV_SYNC_SELECT')
-        grd.operator('object.road_shape_shift', icon='PAUSE')
-        grd.operator('object.road_shape_shift_adjacent', icon='FRAME_NEXT')
+        grd.operator(RShapeSelect.bl_idname, icon='RESTRICT_SELECT_OFF')
+        grd.operator(RShapeSelect.bl_idname, icon='FILE_REFRESH')
+        grd.operator(RShapeAdjustWidth.bl_idname, icon='ARROW_LEFTRIGHT')
+        grd.operator(RShapeFlip.bl_idname, icon='UV_SYNC_SELECT')
+        grd.operator(RShapeShift.bl_idname, icon='PAUSE')
+        grd.operator(RShapeShiftAdjacent.bl_idname, icon='FRAME_NEXT')
         grd = layout.grid_flow()
         grd.label(text='Creating')
-        grd.operator('object.road_shape_create_straight',
-                     icon_value=(pcoll['RSHAPE_SINGLE'].icon_id))
-        grd.operator('object.road_shape_create_elliptic', icon='CURVE_NCIRCLE')
+        grd.operator(RShapeCreateStraight.bl_idname, icon_value=(pcoll['RSHAPE_SINGLE'].icon_id))
+        grd.operator(RShapeCreateElliptic.bl_idname, icon='CURVE_NCIRCLE')
         box = layout.box()
         box.label(text='Create bezier', icon='MOD_CURVE')
         col = box.column()
-        col.operator('object.road_shape_prepare_bezier', icon='CURVE_DATA')
+        col.operator(RShapePrepareCurve, icon='CURVE_DATA')
         rcurve_prop = col.column_flow()
         rcurve_prop.prop((context.object.data), 'resolution_u', text='Quality')
         rcurve_prop.prop((context.object.data), 'extrude', text='Width')
         rcurve_prop.enabled = ContextIsRCurve(context)
-        rcurve_prop.operator('object.road_shape_finalize_bezier', icon='OUTLINER_OB_CURVE')
+        rcurve_prop.operator(RShapeFinalizeCurve.bl_idname, icon='OUTLINER_OB_CURVE')
 
 to_register = [
     FileExportRoadsAndIntersects,
     FileImportRoads,
     IntersectCreate,
+    ToggleIntersectionNames,
     MDE_PT_Intersections,
     MDE_PT_RoadFileManagement,
     MDE_PT_RoadShapes,

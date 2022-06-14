@@ -223,7 +223,7 @@ def add_salt(x : Vector, salt_amount = 3):
         x + Vector((0,-salt_amount,0)),
     ]
 
-def create_markers_grid_from_meshes(objects, individual = True) -> list:
+def create_markers_grid_from_meshes(objects, individual = True) -> list: #< Added iMarkers Grid Creation Operator (See previous commit, oops)
     """Return 20x20 XY grid within bounds of all objects."""
     marker_locs = []
     tminX,tminY,tmaxX,tmaxY = None,None,None,None

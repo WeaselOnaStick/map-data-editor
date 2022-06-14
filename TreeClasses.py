@@ -66,7 +66,7 @@ class CreateMarkersFromMeshOperator(bpy.types.Operator):
             marker_col.objects.link(a)
         return {'FINISHED'}
 
-class CreateMarkersGridFromMeshOperator(bpy.types.Operator):
+class CreateMarkersGridFromMeshOperator(bpy.types.Operator): #< Added iMarkers Grid Creation Operator (See previous commit, oops)
     """Create simple 20x20 XY grid of markers bounding the mesh"""
     bl_idname = "object.create_intersect_markers_grid_from_mesh"
     bl_label = "Create Markers Grid From Meshes"

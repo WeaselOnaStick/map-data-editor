@@ -681,12 +681,11 @@ class MDE_PT_RoadShapes(bpy.types.Panel, RoadModule):
         box.label(text='Create bezier', icon='MOD_CURVE')
         col = box.column()
         col.operator('object.road_shape_prepare_bezier', icon='CURVE_DATA')
-        if ContextIsRCurve(context):
-            col.split()
-            col.prop((context.object.data), 'resolution_u', text='Quality')
-            col.prop((context.object.data), 'extrude', text='Width')
-        col.operator('object.road_shape_finalize_bezier',
-                     icon='OUTLINER_OB_CURVE')
+        rcurve_prop = col.column_flow()
+        rcurve_prop.prop((context.object.data), 'resolution_u', text='Quality')
+        rcurve_prop.prop((context.object.data), 'extrude', text='Width')
+        rcurve_prop.enabled = ContextIsRCurve(context)
+        rcurve_prop.operator('object.road_shape_finalize_bezier', icon='OUTLINER_OB_CURVE')
 
 to_register = [
     FileExportRoadsAndIntersects,

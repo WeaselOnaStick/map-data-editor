@@ -1,4 +1,6 @@
 #I honestly have no idea how I wrote all this mess. But it works and that's what matters
+import numpy as np
+import itertools
 from math import pi
 from mathutils import Euler, Vector, geometry
 import mathutils
@@ -221,9 +223,39 @@ def add_salt(x : Vector, salt_amount = 3):
         x + Vector((0,-salt_amount,0)),
     ]
 
+def create_markers_grid_from_meshes(objects, individual = True) -> list:
+    """Return 20x20 XY grid within bounds of all objects."""
+    marker_locs = []
+    tminX,tminY,tmaxX,tmaxY = None,None,None,None
+    for o in objects:
+        mw  = o.matrix_world        
+        #get object bounds
+        corners = [mw @ Vector(x) for x in o.bound_box]
+        
+        minX = snap_int_to_divisible(min([c.x for c in corners]),20,False)
+        minY = snap_int_to_divisible(min([c.y for c in corners]),20,False)
+        maxX = snap_int_to_divisible(max([c.x for c in corners]),20,True)
+        maxY = snap_int_to_divisible(max([c.y for c in corners]),20,True)
+
+        if individual:
+            marker_locs += list(itertools.product(np.arange(minX,maxX+20,20),np.arange(minY,maxY+20,20)))
+        else:
+            if tminX is None or minX < tminX:
+                tminX = minX
+            if tminY is None or minY < tminY:
+                tminY = minY
+            if tmaxX is None or maxX > tmaxX:
+                tmaxX = maxX
+            if tmaxY is None or maxY > tmaxY:
+                tmaxY = maxY
+
+    if not individual:
+        marker_locs = list(itertools.product(np.arange(tminX,tmaxX+20,20),np.arange(tminY,tmaxY+20,20)))
+
+    return marker_locs
+
 def create_markers_from_meshes(objects,depsgraph) -> list:
-    """Takes MESH objects, returns a list of marker locations"""
-    #TODO somehow fix rotation not being applied
+    """Return 20x20 XY grid Raycast hits + Vertices"""
 
     marker_locs = []
 

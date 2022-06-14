@@ -59,6 +59,8 @@ class Export_instance_listOperator(bpy.types.Operator, ExportHelper):
 
 
 class Import_instance_listOperator(bpy.types.Operator, ImportHelper):
+
+    #TODO: Importing lists fucks up rotation if active object doesn't have those applied
     bl_idname = "import_scene.list_instance"
     bl_label = "Import Instance List"
     filename_ext = '.p3dxml'

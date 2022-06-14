@@ -1,3 +1,4 @@
+from email.policy import default
 import bpy
 from time import time
 from bpy.props import *
@@ -15,7 +16,7 @@ def GetMarkersCollection(context):
     return marker_col
 
 class LoadIntersectPoints(bpy.types.Operator, ImportHelper):
-    """Select a p3dxml file that contains Intersect (0x3F00003) chunks"""
+    """Load Intersect markers from p3dxml that contains Intersect (0x3F00003) chunks"""
     bl_idname = 'import_scene.intersect_points'
     bl_label = "Load Intersect Markers"
     filename_ext = '.p3dxml'
@@ -39,9 +40,9 @@ class LoadIntersectPoints(bpy.types.Operator, ImportHelper):
 
 
 class CreateMarkersFromMeshOperator(bpy.types.Operator):
-    """Create intersect markers from selected mesh objects.\n(Might need to apply transforms)"""
+    """Create intersect markers from selected mesh objects via raycasts from 20x20 grid.\n(CAN BE VERY SLOW FOR HUGE MESHES\nUse in such case "Create Markers Grid From Meshes")"""
     bl_idname = "object.create_intersect_markers_from_mesh"
-    bl_label = "Create Markers From Mesh"
+    bl_label = "Create Markers From Meshes"
     bl_options = {'REGISTER'}
 
     #check that we actually have mesh objects selected
@@ -63,6 +64,45 @@ class CreateMarkersFromMeshOperator(bpy.types.Operator):
             a = bpy.data.objects.new("iMarker", None)
             a.location = loc
             marker_col.objects.link(a)
+        return {'FINISHED'}
+
+class CreateMarkersGridFromMeshOperator(bpy.types.Operator):
+    """Create simple 20x20 XY grid of markers bounding the mesh"""
+    bl_idname = "object.create_intersect_markers_grid_from_mesh"
+    bl_label = "Create Markers Grid From Meshes"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.selected_objects and 'MESH' in [x.type for x in context.selected_objects]
+
+    
+    individual: bpy.props.BoolProperty(
+        name="Use Individual Meshes",
+        description="Use individual object's bounds to create multiple grids",
+        default=False,
+    )
+
+    select_markers: bpy.props.BoolProperty(
+        name="Select Created Markers",
+        default = False,
+    )
+
+    def execute(self, context):
+        marker_col = GetMarkersCollection(context)
+        mesh_objs = [x for x in context.selected_objects if x.type == 'MESH']
+
+        markers_locs = TM.create_markers_grid_from_meshes(mesh_objs, individual=self.individual)
+
+        if self.select_markers:
+            for x in context.selected_objects:
+                x.select_set(False)
+        for loc in markers_locs:
+            a = bpy.data.objects.new("iMarker", None)
+            a.location.xy = loc
+            marker_col.objects.link(a)
+            if self.select_markers:
+                a.select_set(True)
         return {'FINISHED'}
 
 class ResetMarkers(bpy.types.Operator):
@@ -130,12 +170,14 @@ class MDE_PT_TreeFileManagment(bpy.types.Panel, MiscModule):
         layout = self.layout
         layout.operator('import_scene.intersect_points', icon='IMPORT')
         layout.operator('object.create_intersect_markers_from_mesh', icon='SHADERFX')
+        layout.operator('object.create_intersect_markers_grid_from_mesh', icon='MESH_GRID')
         layout.operator('object.reset_intersect_markers', icon='TRASH')
         layout.operator('export_scene.grid_tree', icon='EXPORT')
 
 to_register = [
     GridTreeExport,
     LoadIntersectPoints,
+    CreateMarkersGridFromMeshOperator,
     CreateMarkersFromMeshOperator,
     ResetMarkers,
     MDE_PT_TreeFileManagment,

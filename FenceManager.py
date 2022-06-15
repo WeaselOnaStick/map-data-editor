@@ -3,16 +3,20 @@ import bpy
 
 from .utils_bpy import *
 from .utils_p3dxml import *
+from mathutils import *
 
-
-def fence_create(a=Vector((0, 0, 0)), b=Vector((15, 15, 0))):
-    a.z = 0
-    b.z = 0
-    if 'Fences' not in bpy.context.scene.collection.children:
+def get_fence_collection(context):
+    if 'Fences' not in context.scene.collection.children:
         fence_collection = bpy.data.collections.new('Fences')
-        bpy.context.scene.collection.children.link(fence_collection)
+        context.scene.collection.children.link(fence_collection)
     else:
         fence_collection = bpy.data.collections['Fences']
+    return fence_collection
+
+def fence_create(a=Vector((0, 0, 0)), b=Vector((15, 15, 0))):
+    """Returns a curve object with single spline made of points a,b"""
+    a.z = 0
+    b.z = 0
     fc = bpy.data.curves.new('Fence', 'CURVE')
     fc.dimensions = '2D'
     fc.extrude = 50
@@ -23,78 +27,61 @@ def fence_create(a=Vector((0, 0, 0)), b=Vector((15, 15, 0))):
     fcs.use_endpoint_u = True
     fcs.use_smooth = False
     fco = bpy.data.objects.new('Fence', fc)
-    fence_collection.objects.link(fco)
     return fco
 
 
 def fence_flip(obj):
-    p = obj.data.splines[0].points
-    a = p[0].co.copy()
-    b = p[1].co.copy()
-    p[0].co = b
-    p[1].co = a
-
-
-def rip_polys_to_fences(objs):
-    bpy.ops.object.mode_set(mode='OBJECT')
-    for obj in objs:
-        obj.data.dimensions = '3D'
-    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-    for obj in objs:
-        for spline in obj.data.splines:
-            sp_points = [x.co for x in spline.points] + [x.co for x in spline.bezier_points]
-            for i in range(len(sp_points) - 1):
-                fence_create(sp_points[i], sp_points[(i + 1)])
-        bpy.data.objects.remove(obj)
+    for spline in obj.data.splines:
+        pts = spline.points
+        for i in range(len(pts)//2):
+            a = pts[i].co.copy()
+            b = pts[-i-1].co.copy()
+            pts[i].co = b
+            pts[-i-1].co = a
 
 
 def import_fences(filepath):
+    """Returns a list of fence objs"""
+    fences = []
     root = terra_read(filepath)
     for fence in find_chunks(root, FEN):
         fence_data = list(fence)[0]
-        fence_create(find_xyz(fence_data, 'Start'),
-                     find_xyz(fence_data, 'End'))
+        fences.append(fence_create(find_xyz(fence_data, 'Start'), find_xyz(fence_data, 'End')))
+    return fences
 
-
-def invalid_fences(objs):
-    naughty = []
-    if not objs:
-        return "No Fences Selected"
-    for ob in objs:
-        if ob.type != 'CURVE':
-            naughty.append(f"{ob.name} is not a CURVE object")
-            continue
-        if ob.users_collection[0].name != 'Fences':
-            naughty.append(f'{ob.name} is not inside "Fences" collection')
-            continue
-        if len(ob.data.splines) != 1:
-            naughty.append(f"{ob.name} has {len(ob.data.splines)} splines instead of 1")
-            continue
-        if len(ob.data.splines[0].points) != 2:
-            naughty.append(f"{ob.name} has {len(ob.data.splines[0].points)} spline points instead of 2")
-            continue
-        if ob.data.splines[0].type != 'POLY':
-            naughty.append(f"{ob.name}\'s spline type is not \"NURBS\" ")
-            continue
-    if not naughty:
-        return False
-    return '\n'.join(naughty)
-
+def fence_flippable(obj : bpy.types.Object):
+    return obj.type == 'CURVE' and obj.data.splines
 
 def export_fences(filepath, objs):
+    """If found 'faulty' fences were True"""
+    no_faults = True
     root = p3d_et()
     for obj in objs:
-        fen = write_chunk(root, FEN)
-        fen2 = write_chunk(fen, FEN2)
-        start = obj.matrix_world @ obj.data.splines[0].points[0].co.copy().to_3d()
-        end = obj.matrix_world @ obj.data.splines[0].points[1].co.copy().to_3d()
-        start.z = 0
-        end.z = 0
-        no = (end - start).cross(Vector((0, 0, 1))).normalized()
-        no.z = 0
-        no.negate()
-        write_xyz(fen2, 'Start', *start)
-        write_xyz(fen2, 'End', *end)
-        write_xyz(fen2, 'Normal', *no)
+        obj = bpy.types.Object(obj)
+        if not obj.data.splines: 
+            continue
+        if obj.modifiers:
+            no_faults = False
+            print(f"{obj.name} has modifiers. Result may be unexpected")
+        MW = Matrix(obj.matrix_world)
+        if MW.to_euler().x != 0 or MW.to_euler().y != 0:
+            no_faults = False
+            print(f"{obj.name} has non-zero XY rotation! Result may be unexpected")
+        for spline in obj.data.splines:
+            spline = bpy.types.Spline(spline)
+            for i in range(1,len(spline.points)):
+                fen = write_chunk(root, FEN)
+                fen2 = write_chunk(fen, FEN2)
+                start = obj.matrix_world @ spline.points[i-1].co.to_3d()
+                end = obj.matrix_world @ spline.points[i].co.to_3d()
+                start.z = 0
+                end.z = 0
+                no = (end - start).cross(Vector((0, 0, 1))).normalized()
+                no.z = 0
+                no.negate()
+                write_xyz(fen2, 'Start', *start)
+                write_xyz(fen2, 'End', *end)
+                write_xyz(fen2, 'Normal', *no)
 
     write_ET(root, filepath)
+    return no_faults

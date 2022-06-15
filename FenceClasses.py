@@ -14,9 +14,10 @@ class FileImportFences(bpy.types.Operator, ImportHelper):
                                           maxlen=255)
 
     def execute(self, context):
-        import_fences(self.filepath)
-        return {
-            'FINISHED'}
+        fence_objs = import_fences(self.filepath)
+        for obj in fence_objs:
+            get_fence_collection(context).objects.link(obj)
+        return {'FINISHED'}
 
 
 class FileExportFences(bpy.types.Operator, ExportHelper):
@@ -30,30 +31,23 @@ class FileExportFences(bpy.types.Operator, ExportHelper):
     selected_only: bpy.props.BoolProperty(name='Selected Only',
                                           description='Only export selected fences',
                                           default=False)
-    safe_check: bpy.props.BoolProperty(name='Check Fence Validity',
-                                       description='Check if the Fences are valid blender objects',
-                                       default=True)
 
     def execute(self, context):
         if self.selected_only:
             objs = context.selected_objects
             if not objs:
                 self.report({'ERROR_INVALID_INPUT'}, 'No Fences selected!')
-                return {
-                    'CANCELLED'}
+                return {'CANCELLED'}
         else:
             if 'Fences' not in bpy.data.collections:
                 self.report({'ERROR'}, 'No "Fences" collection found')
-                return {
-                    'CANCELLED'}
+                return {'CANCELLED'}
             objs = bpy.data.collections['Fences'].objects
-        if self.safe_check:
-            if invalid_fences(objs):
-                self.report({'ERROR'}, invalid_fences(objs))
-                return {
-                    'CANCELLED'}
-        export_fences(self.filepath, objs)
-        self.report({'INFO'}, f"Successfully exported {len(objs)} Fences to {self.filepath}")
+        result = export_fences(self.filepath, objs)
+        if result:
+            self.report({'INFO'}, f"Successfully exported {len(objs)} fences")
+        else:
+            self.report({'WARNING'}, f"Successfully exported {len(objs)} fences but some reported errors, check console for details")
         return {'FINISHED'}
 
 
@@ -61,17 +55,9 @@ class FenceCreate(bpy.types.Operator):
     bl_idname = 'object.fence_create'
     bl_label = 'Create a Base Fence'
     bl_options = {'REGISTER', 'UNDO'}
-    end: bpy.props.FloatVectorProperty(
-        name='Relative End Point',
-        size=2,
-        subtype='XYZ',
-        default=(10, 30),
-    )
 
     def execute(self, context):
-        fence_obj = fence_create(
-            context.scene.cursor.location,
-            context.scene.cursor.location + self.end.to_3d())
+        fence_obj = fence_create(context.scene.cursor.location, context.scene.cursor.location + Vector((10,30,0)))
         fence_obj.select_set(True)
         bpy.context.view_layer.objects.active = fence_obj
         bpy.ops.object.mode_set(mode='EDIT')
@@ -80,66 +66,66 @@ class FenceCreate(bpy.types.Operator):
 
 class FenceFlip(bpy.types.Operator):
     bl_idname = 'object.fence_flip'
-    bl_label = 'Flip Selected Fences'
+    bl_label = 'Flip Fences'
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context):
-        return not(invalid_fences(context.selected_objects))
+        return fence_flippable(context.object)
 
     def execute(self, context):
         for obj in context.selected_objects:
-            fence_flip(obj)
+            if fence_flippable(obj):
+                fence_flip(obj)
         return {'FINISHED'}
 
 
-class FenceRip(bpy.types.Operator):
-    bl_idname = 'object.fence_rip'
-    bl_label = 'Rip Poly Curve'
+# class FenceRip(bpy.types.Operator):
+#     bl_idname = 'object.fence_rip'
+#     bl_label = 'Rip Poly Curve'
 
-    @classmethod
-    def poll(cls, context):
-        objs = context.selected_objects
-        if not objs:
-            return False
-        for ob in objs:
-            if ob.type != 'CURVE':
-                return False
-            if ob.data.splines[0].type != 'POLY':
-                return False
-        return True
+#     @classmethod
+#     def poll(cls, context):
+#         objs = context.selected_objects
+#         if not objs:
+#             return False
+#         for ob in objs:
+#             if ob.type != 'CURVE':
+#                 return False
+#             if ob.data.splines[0].type != 'POLY':
+#                 return False
+#         return True
 
-    def execute(self, context):
-        rip_polys_to_fences(context.selected_objects)
-        return{'FINISHED'}
+#     def execute(self, context):
+#         rip_polys_to_fences(context.selected_objects)
+#         return{'FINISHED'}
 
 
-class FenceApplyTran(bpy.types.Operator):
-    bl_idname = 'object.fence_apply_tran'
-    bl_label = 'Apply Fence Transforms'
+# class FenceApplyTran(bpy.types.Operator):
+#     bl_idname = 'object.fence_apply_tran'
+#     bl_label = 'Apply Fence Transforms'
 
-    @classmethod
-    def poll(cls, context):
-        if not context.selected_objects:
-            return False
-        for ob in context.selected_objects:
-            if ob.type != 'CURVE':
-                return False
-        return True
+#     @classmethod
+#     def poll(cls, context):
+#         if not context.selected_objects:
+#             return False
+#         for ob in context.selected_objects:
+#             if ob.type != 'CURVE':
+#                 return False
+#         return True
 
-    def execute(self, context):
-        bpy.ops.object.mode_set(mode='OBJECT')
-        objs = context.selected_objects
-        for fobj in objs:
-            fobj.data.dimensions = '3D'
-        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-        for fobj in objs:
-            fobj.data.dimensions = '2D'
-        return{'FINISHED'}
+#     def execute(self, context):
+#         bpy.ops.object.mode_set(mode='OBJECT')
+#         objs = context.selected_objects
+#         for fobj in objs:
+#             fobj.data.dimensions = '3D'
+#         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+#         for fobj in objs:
+#             fobj.data.dimensions = '2D'
+#         return{'FINISHED'}
 
 
 class FenceModule:
-
     @classmethod
     def poll(cls, context):
         return context.preferences.addons[__package__].preferences.FencesEnabled
@@ -177,19 +163,14 @@ class MDE_PT_Fences(bpy.types.Panel, FenceModule):
 
     def draw(self, context):
         layout = self.layout
-        row = layout.row()
-        row.prop((context.area.spaces[0].overlay), 'show_face_orientation', text='Display Fence Orientation', icon='NORMALS_FACE')
         col = layout.column()
+        col.prop((context.area.spaces[0].overlay), 'show_face_orientation', text='Display Face Orientation', icon='NORMALS_FACE')
         col.operator((FenceCreate.bl_idname), icon='PLUS')
         col.operator((FenceFlip.bl_idname), icon='UV_SYNC_SELECT')
-        col.operator((FenceRip.bl_idname), icon='MOD_ARRAY')
-        col.operator((FenceApplyTran.bl_idname), icon='CHECKMARK')
 
 to_register = [
-    FenceApplyTran,
     FenceCreate,
     FenceFlip,
-    FenceRip,
     FileExportFences,
     FileImportFences,
     MDE_PT_FenceFileManagement,

@@ -90,6 +90,20 @@ def register():
         name='WMDE Locator Properties'
     )
 
+    bpy.types.WindowManager.intersection_names_visible = bpy.props.BoolProperty(
+        default=False,
+        set=set_intersection_names_visible,
+        get=get_intersection_names_visible,
+        )
+
+from .RoadClasses import GetIntersectionsCollection
+def set_intersection_names_visible(self, value):
+    self["intersection_names_visible"] = value
+    for int_obj in GetIntersectionsCollection(bpy.context).objects:
+            int_obj.show_name = bpy.context.window_manager.intersection_names_visible
+
+def get_intersection_names_visible(self):
+    return self["intersection_names_visible"]
 
 def unregister():
     from bpy.utils import unregister_class
@@ -98,6 +112,7 @@ def unregister():
     del bpy.types.Collection.road_node_prop
     del bpy.types.Object.inter_road_beh
     del bpy.types.Object.locator_prop
+    del bpy.types.WindowManager.intersection_names_visible
 
 
 if __name__ == '__main__':

@@ -166,17 +166,6 @@ class IntersectCreate(bpy.types.Operator):
 def is_intersection(object : bpy.types.Object, context):
     return object.type == 'EMPTY' and object.empty_display_type == 'SPHERE' and object.users_collection[0] == GetIntersectionsCollection(context)
 
-class ToggleIntersectionNames(bpy.types.Operator):
-    """Toggle Intersection Names Visibility"""
-    bl_idname = 'object.intersection_names_toggle'
-    bl_label = 'Toggle Intersection Names Visibility'
-
-    def execute(self, context):
-        context.window_manager.intersection_names_visible = not context.window_manager.intersection_names_visible
-        for int_obj in GetIntersectionsCollection(context).objects:
-            int_obj.show_name = context.window_manager.intersection_names_visible
-        return {'FINISHED'}
-
 class RoadEditOperator:
 
     @classmethod
@@ -620,16 +609,15 @@ class MDE_PT_Intersections(bpy.types.Panel, RoadModule):
 
     def draw(self, context):
         layout = self.layout
-        ToggleIntersectionNames
         layout.operator(IntersectCreate.bl_idname, icon='PLUS')
-        layout.operator(ToggleIntersectionNames.bl_idname, text = 'Toggle Names', icon='HIDE_OFF')
+        layout.prop(context.window_manager, "intersection_names_visible", text="Show Intersection Names", icon='HIDE_OFF' if context.window_manager.intersection_names_visible else 'HIDE_ON')
         if context.object and is_intersection(context.object, context):
             layout.prop(context.object, 'scale', index=0, text='Radius')
             layout.prop(context.object, 'inter_road_beh')
 
 
 class MDE_PT_Roads(bpy.types.Panel, RoadModule):
-    #TODO Operator to batch change properties of many roads at once(?)
+    #TODO Operator to batch change properties of many at once(?)
     bl_label = "Roads"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
@@ -711,7 +699,6 @@ to_register = [
     FileExportRoadsAndIntersects,
     FileImportRoads,
     IntersectCreate,
-    ToggleIntersectionNames,
     MDE_PT_Intersections,
     MDE_PT_RoadFileManagement,
     MDE_PT_RoadShapes,

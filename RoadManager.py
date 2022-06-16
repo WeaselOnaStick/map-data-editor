@@ -116,7 +116,7 @@ def rs_create_from_bezier(context):
     bpy.data.objects.remove(leftover_mesh)
 
 
-def misc_create_bezier(context, collection):
+def misc_create_bezier(context):
     curve = bpy.data.curves.new('BezierRoadShape', 'CURVE')
     curve.dimensions = '3D'
     spline = curve.splines.new('BEZIER')
@@ -132,10 +132,10 @@ def misc_create_bezier(context, collection):
     bzp[1].tilt = pi / 2
     curve.extrude = 3
     curve_obj = bpy.data.objects.new('BezierRoadShape', curve)
-    collection.objects.link(curve_obj)
     curve_obj.display_type = 'WIRE'
     curve_obj.show_in_front = True
-    curve_obj.location = context.scene.cursor.location 
+    curve_obj.location = context.scene.cursor.location
+    return curve_obj
 
 
 def rs_edit_upd(obj):

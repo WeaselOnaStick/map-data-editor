@@ -212,8 +212,8 @@ class RoadEditOperator:
 
     @classmethod
     def poll(cls, context):
-        if get_current_coll(context):
-            return get_current_coll(context).road_node_prop.to_export
+        if get_current_road_collection(context):
+            return get_current_road_collection(context).road_node_prop.to_export
         else:
             return False
 
@@ -225,10 +225,10 @@ class RShapeEditOperator:
     def poll(cls, context):
         if not context.selected_objects:
             return False
-        if not get_current_coll(context):
+        if not get_current_road_collection(context):
             return False
         else:
-            this_col = get_current_coll(context)
+            this_col = get_current_road_collection(context)
             if this_col is None:
                 return False
             return this_col.objects and this_col.road_node_prop.to_export
@@ -259,7 +259,7 @@ class RoadDelete(bpy.types.Operator, RoadEditOperator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        bpy.data.collections.remove(get_current_coll(context))
+        bpy.data.collections.remove(get_current_road_collection(context))
         return {'FINISHED'}
 
 
@@ -270,7 +270,7 @@ class RoadDuplicate(bpy.types.Operator, RoadEditOperator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        old_col = get_current_coll(context)
+        old_col = get_current_road_collection(context)
         new_col = old_col.copy()
         get_col_parent(old_col).children.link(new_col)
         for obj in new_col.objects:
@@ -291,13 +291,12 @@ class RoadDuplicate(bpy.types.Operator, RoadEditOperator):
         return {'FINISHED'}
 
 
-class RoadCreateAdjacent(bpy.types.Operator, RoadEditOperator):
+class RoadCreateAdjacent(bpy.types.Operator, RoadEditOperator): #Dirty macro
     """Create a new road, shift it adjacently and flip its direction"""
     bl_idname = 'object.road_create_adjacent'
     bl_label = 'Create Adjacent Road'
     bl_options = {'REGISTER', 'UNDO'}
-    direction: bpy.props.BoolProperty(name='To Right',
-                                      default=True)
+    direction: bpy.props.BoolProperty(name='To Right', default=True)
 
     def execute(self, context):
         bpy.ops.object.road_shape_select()
@@ -314,14 +313,14 @@ class RoadSeparate(bpy.types.Operator, RShapeEditOperator):
 
     @classmethod
     def poll(cls, context):
-        if get_current_coll(context):
-            return not all([x.select_get() for x in get_current_coll(context).objects]) and RShapeEditOperator.poll(context)
+        if get_current_road_collection(context):
+            return not all([x.select_get() for x in get_current_road_collection(context).objects]) and RShapeEditOperator.poll(context)
         else:
             return False
 
     def execute(self, context):
         new_obj = list(context.selected_objects)
-        old_col = get_current_coll(context)
+        old_col = get_current_road_collection(context)
         new_col = old_col.copy()
         get_col_parent(old_col).children.link(new_col)
         for obj in new_col.all_objects:
@@ -339,8 +338,8 @@ class RShapeAddOperator:
 
     @classmethod
     def poll(cls, context):
-        if get_current_coll(context):
-            return get_current_coll(context).road_node_prop.to_export
+        if get_current_road_collection(context):
+            return get_current_road_collection(context).road_node_prop.to_export
         else:
             return False
 
@@ -352,17 +351,17 @@ class RShapeSelect(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        if not get_current_coll(context):
+        if not get_current_road_collection(context):
             return False
         else:
-            return get_current_coll(context).road_node_prop.to_export and get_current_coll(context).objects
+            return get_current_road_collection(context).road_node_prop.to_export and get_current_road_collection(context).objects
 
     def execute(self, context):
-        if all([x.select_get() for x in get_current_coll(context).objects]):
+        if all([x.select_get() for x in get_current_road_collection(context).objects]):
             n_des = False
         else:
             n_des = True
-        for obj in get_current_coll(context).objects:
+        for obj in get_current_road_collection(context).objects:
             obj.select_set(n_des)
 
         return {'FINISHED'}
@@ -398,38 +397,44 @@ class RShapeCreateElliptic(bpy.types.Operator, RShapeAddOperator):
     bl_idname = 'object.road_shape_create_elliptic'
     bl_label = 'Create elliptic road'
     bl_options = {'REGISTER', 'UNDO'}
-    angle: bpy.props.FloatProperty(description='Angle of the curve',
-                                   name='Angle',
-                                   soft_min=(-360),
-                                   soft_max=360,
-                                   precision=1,
-                                   step=5,
-                                   subtype='ANGLE',
-                                   default=(radians(90)))
-    radius: bpy.props.FloatProperty(description='Radius of the curve',
-                                    name='Radius',
-                                    min=0,
-                                    default=24)
-    resolution: bpy.props.IntProperty(description='Amount of road shapes in a curve',
-                                      name='Quality',
-                                      min=2,
-                                      soft_max=20,
-                                      default=6)
-    width: bpy.props.FloatProperty(description='Entire width of the road',
-                                   name='Width',
-                                   min=0.001,
-                                   soft_max=12,
-                                   default=6)
-    scale: bpy.props.FloatVectorProperty(name='Scale along',
-                                         min=0.001,
-                                         subtype='XYZ',
-                                         default=(1, 1, 0))
-    offset: bpy.props.FloatVectorProperty(name='offset along',
-                                          subtype='XYZ',
-                                          unit='LENGTH')
+    angle: bpy.props.FloatProperty(
+        description='Angle of the curve',
+        name='Angle',
+        soft_min=(-360),
+        soft_max=360,
+        precision=1,
+        step=5,
+        subtype='ANGLE',
+        default=(radians(90)))
+    radius: bpy.props.FloatProperty(
+        description='Radius of the curve',
+        name='Radius',
+        min=0,
+        default=24)
+    resolution: bpy.props.IntProperty(
+        description='Amount of road shapes in a curve',
+        name='Quality',
+        min=2,
+        soft_max=20,
+        default=6)
+    width: bpy.props.FloatProperty(
+        description='Entire width of the road',
+        name='Width',
+        min=0.001,
+        soft_max=12,
+        default=6)
+    scale: bpy.props.FloatVectorProperty(
+        name='Scale along',
+        min=0.001,
+        subtype='XYZ',
+        default=(1, 1, 0))
+    offset: bpy.props.FloatVectorProperty(
+        name='offset along',
+        subtype='XYZ',
+        unit='LENGTH')
 
     def execute(self, context):
-        RoadManager.rs_create_ellip(get_current_coll(context), self.as_keywords())
+        RoadManager.rs_create_ellip(get_current_road_collection(context), self.as_keywords())
         return {'FINISHED'}
 
 
@@ -468,7 +473,7 @@ class RShapeCreateStraight(bpy.types.Operator, RShapeAddOperator):
         return self.execute(context)
 
     def execute(self, context):
-        RoadManager.rs_create_straight(get_current_coll(context), context, self.as_keywords())
+        RoadManager.rs_create_straight(get_current_road_collection(context), context, self.as_keywords())
         return {'FINISHED'}
 
 
@@ -479,7 +484,12 @@ class RShapePrepareCurve(bpy.types.Operator, RShapeAddOperator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        RoadManager.misc_create_bezier(context, get_current_coll(context))
+        curve_obj = RoadManager.misc_create_bezier(context)
+        get_current_road_collection(context).objects.link(curve_obj)
+        for obj in context.selected_objects:
+            obj.select_set(False)
+        context.view_layer.objects.active = curve_obj
+        curve_obj.select_set(True)
         return {'FINISHED'}
 
 
@@ -592,7 +602,7 @@ class RShapeFlip(bpy.types.Operator, RShapeEditOperator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        cur_col = get_current_coll(context)
+        cur_col = get_current_road_collection(context)
         all_shapes_selected = all([x.select_get() for x in cur_col.objects])
         if cur_col.road_node_prop.inter_start is not None:
             if cur_col.road_node_prop.inter_end is not None:
@@ -673,10 +683,10 @@ class MDE_PT_Roads(bpy.types.Panel, RoadModule):
         row.label(text="  ", icon='OPTIONS')
 
     def draw(self, context):
-        this_col = get_current_coll(context)
+        this_col = get_current_road_collection(context)
         layout = self.layout
         layout.operator(RoadCreate.bl_idname, icon='PLUS')
-        if not get_current_coll(context):
+        if not get_current_road_collection(context):
             return
         if not this_col.road_node_prop.to_export:
             return
@@ -709,10 +719,10 @@ class MDE_PT_RoadShapes(bpy.types.Panel, RoadModule):
 
     def draw(self, context):
         layout = self.layout
-        if not get_current_coll(context):
+        if not get_current_road_collection(context):
             layout.label(text="No road collection selected")
             return
-        if not get_current_coll(context).road_node_prop.to_export:
+        if not get_current_road_collection(context).road_node_prop.to_export:
             layout.label(text="No road collection selected")
             return
         grd = layout.grid_flow()
@@ -730,12 +740,13 @@ class MDE_PT_RoadShapes(bpy.types.Panel, RoadModule):
         box = layout.box()
         box.label(text='Create bezier', icon='MOD_CURVE')
         col = box.column()
-        col.operator(RShapePrepareCurve, icon='CURVE_DATA')
-        rcurve_prop = col.column_flow()
-        rcurve_prop.prop((context.object.data), 'resolution_u', text='Quality')
-        rcurve_prop.prop((context.object.data), 'extrude', text='Width')
-        rcurve_prop.enabled = ContextIsRCurve(context)
-        rcurve_prop.operator(RShapeFinalizeCurve.bl_idname, icon='OUTLINER_OB_CURVE')
+        col.operator(RShapePrepareCurve.bl_idname, icon='CURVE_DATA')
+        if ContextIsRCurve(context):
+            rcurve_prop = col.column_flow()
+            rcurve_prop.prop((context.object.data), 'resolution_u', text='Quality')
+            rcurve_prop.prop((context.object.data), 'extrude', text='Width')
+            rcurve_prop.operator(RShapeFinalizeCurve.bl_idname, icon='OUTLINER_OB_CURVE')
+
 
 to_register = [
     FileExportRoadsAndIntersects,

@@ -3,7 +3,7 @@ import os
 from os import path
 
 
-def get_current_coll(context):
+def get_current_road_collection(context):
     if len(context.selected_objects) >= 1 and context.selected_objects[0].users_collection[0].road_node_prop.to_export:
         return context.selected_objects[0].users_collection[0]
     if context.object and context.object.users_collection[0].road_node_prop.to_export:

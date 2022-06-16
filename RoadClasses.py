@@ -7,55 +7,89 @@ from . import RoadManager
 from math import radians
 from .utils_bpy import pcoll
 import os
-RoadProps = ['to_export', 'inter_start', 'inter_end', 'lanes', 'max_cars', 'speed', 'intel', 'short', 'unknown']
+RoadProps = [
+    'to_export', 
+    'inter_start', 
+    'inter_end', 
+    'lanes', 
+    'max_cars', 
+    'speed', 
+    'intel', 
+    'short', 
+    'unknown',
+    ]
 
 
 class RoadPropGroup(bpy.types.PropertyGroup):
-    to_export: bpy.props.BoolProperty(name='Is a SHAR road',
-                                      description='Marks current collection as a SHAR Road node\nIf enabled, this collection is gonna get exported',
-                                      default=False)
-    inter_start: bpy.props.PointerProperty(name='Start Intersection',
-                                           type=(bpy.types.Object))
-    inter_end: bpy.props.PointerProperty(name='End Intersection',
-                                         type=(bpy.types.Object))
-    lanes: bpy.props.IntProperty(name='Lanes',
-                                 description='How much lanes is actually in this road. One lane in SHAR is usually 6 units long. Soft maxed',
-                                 default=1,
-                                 min=1,
-                                 soft_max=3)
-    max_cars: bpy.props.IntProperty(name='Maximum Cars',
-                                    description='Maximum amount of traffic cars to be spawned here. Soft maxed',
-                                    default=5,
-                                    min=0,
-                                    soft_max=10)
-    speed: bpy.props.IntProperty(name='Speed',
-                                 description='Even though the .p3d file contains this data, Radical does not use this value.\nExpect something in new Mod Launcher update. Soft maxed',
-                                 default=50,
-                                 min=0,
-                                 max=200)
-    intel: bpy.props.IntProperty(name='Intelligence',
-                                 description='How much intel does an AI car has to have in order to use this road',
-                                 default=0,
-                                 min=0,
-                                 max=50)
-    short: bpy.props.BoolProperty(description='Defines if a car can be spawned here on restart',
-                                  name='Shortcut',
-                                  default=False)
-    unknown: bpy.props.IntProperty(description='Radical always uses 0 for this value. No idea what it does. (if anything)',
-                                   name='Unknown 4',
-                                   default=0)
+    to_export: bpy.props.BoolProperty(
+        name='Is a SHAR road',
+        description='Marks current collection as a SHAR Road node\nIf enabled, this collection is gonna get exported',
+        default=False,
+        )
+    def is_valid_intersection(self, object):
+        return is_intersection(object, bpy.context) #TODO Should we check for inter_start != inter_end? Probably not
+    inter_start: bpy.props.PointerProperty(
+        name='Start Intersection',
+        type=bpy.types.Object,
+        poll=is_valid_intersection,
+        )
+    inter_end: bpy.props.PointerProperty(
+        name='End Intersection',
+        type=bpy.types.Object,
+        poll=is_valid_intersection,
+        )
+    lanes: bpy.props.IntProperty(
+        name='Lanes',
+        description='How many lanes are actually in this road. Soft maxed',
+        default=1,
+        min=1,
+        soft_max=5,
+        )
+    max_cars: bpy.props.IntProperty(
+        name='Maximum Cars',
+        description='Maximum amount of traffic cars to be spawned here',
+        default=5,
+        min=0,
+        )
+    speed: bpy.props.IntProperty(
+        name='Speed',
+        description='Even though the .p3d file contains this data, Radical does not use this value.\nExpect something in new Mod Launcher update. Soft maxed',
+        default=50,
+        min=0,
+        )
+    intel: bpy.props.IntProperty(
+        name='Intelligence',
+        description='How much intellect AI car must have to use this road',
+        default=0,
+        min=0,
+        max=50,
+        )
+    short: bpy.props.BoolProperty(
+        description='Defines if a car can be spawned here on restart',
+        name='Shortcut',
+        default=False,
+        )
+    unknown: bpy.props.IntProperty(
+        description='Radical always uses 0 for this value. No idea what it does. (if anything)',
+        name='Unknown 4',
+        default=0,
+        )
 
 
 class FileImportRoads(bpy.types.Operator, ImportHelper):
     bl_idname = 'import_scene.roads_p3dxml'
     bl_label = 'Import Roads...'
     filename_ext = '.p3dxml'
-    filter_glob: bpy.props.StringProperty(default='*.p3dxml',
-                                          options={'HIDDEN'},
-                                          maxlen=255)
-    try_sort: bpy.props.BoolProperty(name='Try to sort',
-                                     description='Attempt to sort imported road nodes based on first 2 characters in the name',
-                                     default=True)
+    filter_glob: bpy.props.StringProperty(
+        default='*.p3dxml',
+        options={'HIDDEN'},
+        maxlen=255,
+        )
+    try_sort: bpy.props.BoolProperty(
+        name='Try to sort',
+        description='Attempt to sort imported road nodes based on first 2 characters in the name',
+        default=True,
+        )
 
     def execute(self, context):
         RoadManager.import_roads_and_intersections(self.filepath, self.try_sort)
@@ -69,19 +103,27 @@ class FileExportRoadsAndIntersects(bpy.types.Operator, ExportHelper):
     bl_idname = 'export_scene.roads_p3dxml'
     bl_label = 'Export Roads...'
     filename_ext = '.p3dxml'
-    filter_glob: bpy.props.StringProperty(default='*.p3dxml',
-                                          options={'HIDDEN'},
-                                          maxlen=255)
-    selected_only: bpy.props.BoolProperty(name='Selected Only',
-                                          description='Only export Road Networks that have selected shapes and only selected intersections',
-                                          default=False)
-    safe_check: bpy.props.BoolProperty(name='Check Validity',
-                                       description='Check if the Road Network is valid before exporting\nNot fully crash-proof',
-                                       default=True)
-    connect_margin: bpy.props.FloatProperty(name='Validity Margin',
-                                            description='Value used to determine if road shapes are properly connected to their intersections',
-                                            default=1.5,
-                                            min=0)
+    filter_glob: bpy.props.StringProperty(
+        default='*.p3dxml',
+        options={'HIDDEN'},
+        maxlen=255,
+        )
+    selected_only: bpy.props.BoolProperty(
+        name='Selected Only',
+        description='Only export Road Networks that have selected shapes and only selected intersections',
+        default=False,
+        )
+    safe_check: bpy.props.BoolProperty(
+        name='Check Validity',
+        description='Check if the Road Network is valid before exporting\nNot fully crash-proof',
+        default=True,
+        )
+    connect_margin: bpy.props.FloatProperty(
+        name='Validity Margin',
+        description='Value used to determine if road shapes are properly connected to their intersections',
+        default=1.5,
+        min=0,
+        )
 
     def draw(self, context):
         layout = self.layout
@@ -98,7 +140,7 @@ class FileExportRoadsAndIntersects(bpy.types.Operator, ExportHelper):
             for obj in context.selected_objects:
                 if obj.type == 'MESH' and obj.users_collection[0].road_node_prop.to_export and obj.users_collection[0] not in road_cols:
                     road_cols.append(obj.users_collection[0])
-                if obj.type == 'EMPTY' and obj.empty_display_type == 'SPHERE':
+                if is_intersection(obj,context):
                     inter_objs.append(obj)
         else:
             road_cols = [x for x in bpy.data.collections if x.road_node_prop.to_export and x.objects]
@@ -152,7 +194,7 @@ class IntersectCreate(bpy.types.Operator):
         name='Location',
         subtype='XYZ',
         unit='LENGTH',
-        options={'HIDDEN'}
+        options={'HIDDEN'},
         )
 
     def invoke(self, context, event):
@@ -164,7 +206,7 @@ class IntersectCreate(bpy.types.Operator):
         return {'FINISHED'}
 
 def is_intersection(object : bpy.types.Object, context):
-    return object.type == 'EMPTY' and object.empty_display_type == 'SPHERE' and object.users_collection[0] == GetIntersectionsCollection(context)
+    return object is not None and object.type == 'EMPTY' and object.empty_display_type == 'SPHERE' and object.users_collection[0] == GetIntersectionsCollection(context)
 
 class RoadEditOperator:
 

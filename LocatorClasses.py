@@ -61,49 +61,64 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
         description="Leave empty to disable"
     )
     # Type 4 (SPLINE) support
+    def valid_loc_spline_poll(self, object):
+        return LM.valid_rail_cam_spline(object)
     loc_spline: bpy.props.PointerProperty(
         name="Locator Spline",
         type=bpy.types.Object,
-        description="Locator spline constrains game camera to sit on the spline and follow player"
+        description="Locator spline constraints game camera to sit on the spline and follow the player",
+        poll=valid_loc_spline_poll,
     )
     loc_spline_rail_cam_name: bpy.props.StringProperty(
         name="Rail Camera Name",
         default="RailCam"
     )
-    #TODO: RailCam Behaviour -  set soft min and max to 1 and 2. 1 = Distance, 2 = Projection
-    loc_spline_behaviour: bpy.props.IntProperty(
-        name="Behaviour",
-        default=1,
+    loc_spline_behaviour: bpy.props.EnumProperty(
+        name='Behaviour',
+        description="Description To Be Added", #TODO loc_spline_behaviour description
+        items=[
+            ('DISTANCE','Distance','Description To Be Added'),
+            ('PROJECTION','Projection','Description To Be Added'),
+        ]
     )
     loc_spline_min_radius: bpy.props.FloatProperty(
-        name="Minimum Radius",
+        name="Min Radius",
         default=0.2,
         precision=6,
+        soft_min=0,
+        description="Description To Be Added", #TODO loc_spline_min_radius description
     )
     loc_spline_max_radius: bpy.props.FloatProperty(
-        name="Maximum Radius",
+        name="Max Radius",
         default=0.4,
         precision=6,
+        soft_min=0,
+        description="Description To Be Added", #TODO loc_spline_max_radius description
     )
-    loc_spline_track_rail: bpy.props.IntProperty(
+    loc_spline_track_rail: bpy.props.BoolProperty(
         name="Track Rail",
-        default=1,
+        default=False,
+        description="Description To Be Added", #TODO loc_spline_track_rail description
     )
     loc_spline_track_dist: bpy.props.FloatProperty(
         name="Track Distance",
         default=0.002,
         precision=6,
+        description="Description To Be Added", #TODO loc_spline_track_dist description
     )
-    loc_spline_reverse_sense: bpy.props.IntProperty(
+    loc_spline_reverse_sense: bpy.props.BoolProperty(
         name="Reverse Sense",
-        default=0,
+        default=False,
+        description="Description To Be Added", #TODO loc_spline_reverse_sense description
     )
-    loc_spline_FOV: bpy.props.FloatProperty(
-        name="FOV",
-        default=radians(53.0),
+    loc_spline_fov: bpy.props.FloatProperty(
+        name="Field of View",
+        description="Rail Camera's FOV. Soft capped",
         soft_min=0,
+        soft_max=radians(120),
+        default=radians(60),
         subtype='ANGLE',
-        precision=6,
+        unit='ROTATION',
     )
     loc_spline_target_offset: bpy.props.FloatVectorProperty(
         name="Target Offset",
@@ -111,32 +126,46 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
         subtype='TRANSLATION',
         unit='LENGTH',
         precision=4,
+        description="Description To Be Added", #TODO loc_spline_target_offset description
     )
-    #TODO RailCam PlayAxis insane hackery
-    # (From leaked source) (Can't confirm what anything actually does) SHAR uses this in a very hacky way. Maybe replace this with:
-    # x value is for transition rate
-    # y == 1 to disable FOV lag
-    # z is a float that's then cast to an int and compared bitwise to enable certain features:
-    # z & 0x1 - Car Only
-    # z & 0x2 - Cut In Out
-    # z & 0x4 - Reset
-    # z & 0x8 - On Foot Only (Supposed to crash if CarOnly is also enabled but doesn't)
-    loc_spline_axis_play: bpy.props.FloatVectorProperty(
-        name="Axis Play",
-        size=3,
-        subtype='TRANSLATION',
-        unit='LENGTH',
+    loc_spline_transition_rate: bpy.props.FloatProperty(
+        name='Transition Rate',
+        soft_min=0,
+        soft_max=1,
         precision=4,
+        description="Description To Be Added (Possibly not implemented properly)", #TODO loc_spline_transition_rate description
+    )
+    loc_spline_FOV_lag: bpy.props.BoolProperty(
+        name='FOV Lag Enabled',
+        default=False,
+    )
+    loc_spline_car_only: bpy.props.BoolProperty(
+        name='Car Only',
+        description="Description To Be Added", #TODO loc_spline_car_only description
+    )
+    loc_spline_cut_in_out: bpy.props.BoolProperty(
+        name='Cut In Out',
+        description="Description To Be Added", #TODO loc_spline_car_only description
+    )
+    loc_spline_reset: bpy.props.BoolProperty(
+        name='Reset',
+        description="Most likely Unused", #TODO loc_spline_car_only description
+    )
+    loc_spline_on_foot_only: bpy.props.BoolProperty(
+        name='On Foot Only',
+        description="Description To Be Added", #TODO loc_spline_car_only description
     )
     loc_spline_position_lag: bpy.props.FloatProperty(
         name="Position Lag",
         default=0.3,
         precision=6,
+        description="Description To Be Added", #TODO loc_spline_car_only description
     )
     loc_spline_target_lag: bpy.props.FloatProperty(
         name="Target Lag",
         default=0.3,
         precision=6,
+        description="Description To Be Added", #TODO loc_spline_car_only description
     )
     # Type 5 (ZONE) Support
     dynaload_string: bpy.props.StringProperty(
@@ -174,10 +203,16 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
         name="Unknown 2"
     )
     # Type 12 (CAM) Support
+    def is_camera(self, object : bpy.types.Object):
+        return object.type == 'CAMERA'
     cam_obj: bpy.props.PointerProperty(
         name="Camera Object",
-        type=bpy.types.Object,
-        #description="",
+        type=bpy.types.Object, 
+        poll=is_camera,
+    )
+    static_cam_test: bpy.props.PointerProperty(
+        type=bpy.types.Camera,
+        name='test'
     )
     cam_follow_player: bpy.props.BoolProperty(
         name="Follow Player"
@@ -212,9 +247,11 @@ class FileImportLocators(bpy.types.Operator, ImportHelper):
     bl_idname = 'import_scene.locators_p3dxml'
     bl_label = 'Import Locators'
     filename_ext = '.p3dxml'
-    filter_glob: bpy.props.StringProperty(default='*.p3dxml',
-                                          options={'HIDDEN'},
-                                          maxlen=255)
+    filter_glob: bpy.props.StringProperty(
+        default='*.p3dxml',
+        options={'HIDDEN'},
+        maxlen=255,
+        )
 
     def execute(self, context):
         LM.import_locators(self.filepath)
@@ -225,15 +262,16 @@ class FileExportLocators(bpy.types.Operator, ExportHelper):
     bl_idname = 'export_scene.locators_p3dxml'
     bl_label = 'Export Locators'
     filename_ext = '.p3dxml'
-    filter_glob: bpy.props.StringProperty(default='*.p3dxml',
-                                          options={'HIDDEN'},
-                                          maxlen=255)
-    selected_only: bpy.props.BoolProperty(name='Selected Only',
-                                          description='Only export selected locator objects',
-                                          default=True)
-    safe_check: bpy.props.BoolProperty(name='Check Locators Validity',
-                                       description='Check if specific locators have/don\'t have a trigger volume',
-                                       default=False)
+    filter_glob: bpy.props.StringProperty(
+        default='*.p3dxml',
+        options={'HIDDEN'},
+        maxlen=255,
+        )
+    selected_only: bpy.props.BoolProperty(
+        name='Selected Only',
+        description='Only export selected locator objects',
+        default=True,
+        )
 
     def execute(self, context):
         if self.selected_only:
@@ -242,17 +280,13 @@ class FileExportLocators(bpy.types.Operator, ExportHelper):
             if 'Locators' in context.scene.collection.children:
                 locator_objs = context.scene.collection.children['Locators'].all_objects
             else:
-                self.report(
-                    {'ERROR'}, "No \"Locators\" collection found in Master Collection")
+                self.report({'ERROR'}, "No \"Locators\" collection found in Master Collection")
                 return{'CANCELLED'}
-        if self.safe_check:
-            if LM.invalid_locators(locator_objs):
-                self.report({'ERROR'}, LM.invalid_locators(locator_objs))
-                return {'CANCELLED'}
-        self.report({'INFO'}, 'Safe check passed')
-        LM.export_locators(locator_objs, self.filepath)
-        self.report(
-            {'INFO'}, f"Successfully exported {path.basename(self.filepath)}")
+        export_okay = LM.export_locators(locator_objs, self.filepath)
+        if export_okay:
+            self.report({'INFO'}, f"Successfully exported {path.basename(self.filepath)}")
+        else:
+            self.report({'WARNING'}, f"Export finished but some locators reported errors. Check console for details")
         return {'FINISHED'}
 
 
@@ -346,8 +380,9 @@ class MDE_OP_loc_spline_create(bpy.types.Operator):
             parent=get_cur_locator(context),
             points=[
                 context.scene.cursor.location + Vector((0,0,0)),
-                context.scene.cursor.location + Vector((1,1,0)),
                 context.scene.cursor.location + Vector((0,2,0)),
+                context.scene.cursor.location + Vector((0,4,0)),
+                context.scene.cursor.location + Vector((0,6,0)),
                 ])
         spline_obj.select_set(True)
         context.view_layer.objects.active = spline_obj
@@ -479,8 +514,8 @@ class MDE_PT_Locators(bpy.types.Panel, LocatorModule):
         if locator.locator_prop.loctype == 'SPLINE':
             splinebox = box.box()
             row = splinebox.row()
-            row.label(text="Spline")
-            row.prop(locator.locator_prop, "loc_spline", text="")
+            #row.label(text="Spline")
+            row.prop(locator.locator_prop, "loc_spline", text="Spline", icon='TRACKING')
             col = splinebox.column()
             row = col.row()
             row.operator("object.loc_spline_create", icon='PLUS')
@@ -494,15 +529,23 @@ class MDE_PT_Locators(bpy.types.Panel, LocatorModule):
             column = railcambox.column()
             column.use_property_split=True
             column.prop(locator.locator_prop, "loc_spline_rail_cam_name", text="Name")
+            #column.prop(locator.locator_prop, "loc_spline", icon='TRACKING')
             column.prop(locator.locator_prop, "loc_spline_behaviour")
             column.prop(locator.locator_prop, "loc_spline_min_radius")
             column.prop(locator.locator_prop, "loc_spline_max_radius")
             column.prop(locator.locator_prop, "loc_spline_track_rail")
             column.prop(locator.locator_prop, "loc_spline_track_dist")
             column.prop(locator.locator_prop, "loc_spline_reverse_sense")
-            column.prop(locator.locator_prop, "loc_spline_FOV")
+            column.prop(locator.locator_prop, "loc_spline_fov")
             column.prop(locator.locator_prop, "loc_spline_target_offset")
-            column.prop(locator.locator_prop, "loc_spline_axis_play")
+            #Hidden
+            column.prop(locator.locator_prop, "loc_spline_transition_rate")
+            column.prop(locator.locator_prop, "loc_spline_FOV_lag")
+            column.prop(locator.locator_prop, "loc_spline_car_only")
+            column.prop(locator.locator_prop, "loc_spline_cut_in_out")
+            column.prop(locator.locator_prop, "loc_spline_reset")
+            column.prop(locator.locator_prop, "loc_spline_on_foot_only")
+
             column.prop(locator.locator_prop, "loc_spline_position_lag")
             column.prop(locator.locator_prop, "loc_spline_target_lag")
 
@@ -539,6 +582,7 @@ class MDE_PT_Locators(bpy.types.Panel, LocatorModule):
         # Type 12 (CAM) Support
         if locator.locator_prop.loctype == 'CAM':
             box.prop(locator.locator_prop, "cam_obj")
+            box.prop(locator.locator_prop, "static_cam_test")
             if locator.locator_prop.cam_obj:
                 box.prop(locator.locator_prop.cam_obj.data, "angle")
             else:

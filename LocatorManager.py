@@ -114,8 +114,8 @@ def locator_spline_create(points : list, name="Spline", parent=None, cam_name=''
     spline.points.add(len(points)-1)
     origin = points[0].copy()
     for i,p in enumerate(points):
-        spline.points[i].co = (Vector(points[i])-Vector(origin)).to_4d()
-    spline.order_u = 3
+        spline.points[i].co = (Vector(p)-Vector(origin)).to_4d()
+    #? spline.order_u = 3
 
 
     curve_obj = bpy.data.objects.new(name, curve)
@@ -126,36 +126,54 @@ def locator_spline_create(points : list, name="Spline", parent=None, cam_name=''
     parent.locator_prop.loc_spline_cam_name = cam_name
     return curve_obj
 
+def valid_rail_cam_spline(object):
+        return object and object.type == 'CURVE' and object.data.splines and len(object.data.splines) == 1 and object.data.splines[0].type == 'NURBS' and len(object.data.splines[0].points) >= 4
+
 def GetRailCamProps(locator_obj : bpy.types.Object) -> dict:
     DataDict = {}
-    DataDict['Name']       = locator_obj.locator_prop.loc_spline_rail_cam_name
+    DataDict['Name']            = locator_obj.locator_prop.loc_spline_rail_cam_name
     DataDict['Behaviour']       = locator_obj.locator_prop.loc_spline_behaviour
     DataDict['MinRadius']       = locator_obj.locator_prop.loc_spline_min_radius
     DataDict['MaxRadius']       = locator_obj.locator_prop.loc_spline_max_radius
     DataDict['TrackRail']       = locator_obj.locator_prop.loc_spline_track_rail
     DataDict['TrackDist']       = locator_obj.locator_prop.loc_spline_track_dist
     DataDict['ReverseSense']    = locator_obj.locator_prop.loc_spline_reverse_sense
-    DataDict['FOV']             = locator_obj.locator_prop.loc_spline_FOV
+    DataDict['FOV']             = locator_obj.locator_prop.loc_spline_fov
     DataDict['TargetOffset']    = locator_obj.locator_prop.loc_spline_target_offset
-    DataDict['AxisPlay']        = locator_obj.locator_prop.loc_spline_axis_play
+    #Hidden
+    DataDict['TransitionRate']  = locator_obj.locator_prop.loc_spline_transition_rate
+    DataDict['FOVLagEnabled']   = locator_obj.locator_prop.loc_spline_FOV_lag
+    DataDict['CarOnly']         = locator_obj.locator_prop.loc_spline_car_only
+    DataDict['CutInOut']        = locator_obj.locator_prop.loc_spline_cut_in_out
+    DataDict['Reset']           = locator_obj.locator_prop.loc_spline_reset
+    DataDict['OnFootOnly']      = locator_obj.locator_prop.loc_spline_on_foot_only
+
     DataDict['PositionLag']     = locator_obj.locator_prop.loc_spline_position_lag
     DataDict['TargetLag']       = locator_obj.locator_prop.loc_spline_target_lag
     return DataDict
 
 def SetRailCamProps(locator_obj : bpy.types.Object, DataDict : dict):
-    locator_obj.locator_prop.loc_spline_rail_cam_name   = DataDict['Name']     
-    locator_obj.locator_prop.loc_spline_behaviour       = DataDict['Behaviour']       
-    locator_obj.locator_prop.loc_spline_min_radius      = DataDict['MinRadius']       
-    locator_obj.locator_prop.loc_spline_max_radius      = DataDict['MaxRadius']       
-    locator_obj.locator_prop.loc_spline_track_rail      = DataDict['TrackRail']       
-    locator_obj.locator_prop.loc_spline_track_dist      = DataDict['TrackDist']       
-    locator_obj.locator_prop.loc_spline_reverse_sense   = DataDict['ReverseSense']    
-    locator_obj.locator_prop.loc_spline_FOV             = DataDict['FOV']             
-    locator_obj.locator_prop.loc_spline_target_offset   = DataDict['TargetOffset']    
-    locator_obj.locator_prop.loc_spline_axis_play       = DataDict['AxisPlay']        
-    locator_obj.locator_prop.loc_spline_position_lag    = DataDict['PositionLag']     
-    locator_obj.locator_prop.loc_spline_target_lag      = DataDict['TargetLag'] 
+    locator_obj.locator_prop.loc_spline_rail_cam_name       = DataDict['Name']     
+    locator_obj.locator_prop.loc_spline_behaviour           = DataDict['Behaviour']       
+    locator_obj.locator_prop.loc_spline_min_radius          = DataDict['MinRadius']       
+    locator_obj.locator_prop.loc_spline_max_radius          = DataDict['MaxRadius']       
+    locator_obj.locator_prop.loc_spline_track_rail          = DataDict['TrackRail']       
+    locator_obj.locator_prop.loc_spline_track_dist          = DataDict['TrackDist']       
+    locator_obj.locator_prop.loc_spline_reverse_sense       = DataDict['ReverseSense']    
+    locator_obj.locator_prop.loc_spline_fov                 = DataDict['FOV']             
+    locator_obj.locator_prop.loc_spline_target_offset       = DataDict['TargetOffset']
+    #Hidden
+    locator_obj.locator_prop.loc_spline_transition_rate     = DataDict['TransitionRate']  
+    locator_obj.locator_prop.loc_spline_FOV_lag             = DataDict['FOVLagEnabled']   
+    locator_obj.locator_prop.loc_spline_car_only            = DataDict['CarOnly']         
+    locator_obj.locator_prop.loc_spline_cut_in_out          = DataDict['CutInOut']        
+    locator_obj.locator_prop.loc_spline_reset               = DataDict['Reset']           
+    locator_obj.locator_prop.loc_spline_on_foot_only        = DataDict['OnFootOnly']      
+        
+    locator_obj.locator_prop.loc_spline_position_lag        = DataDict['PositionLag']     
+    locator_obj.locator_prop.loc_spline_target_lag          = DataDict['TargetLag'] 
 
+# this is for static cam locators
 def locator_create_cam(target_pos=Vector(), follow_player=False, FOV=70, cam_name="Camera", target_name="Target", parent=None):
     cam_data = bpy.data.cameras.new(cam_name)
     cam_data.lens_unit = 'FOV'
@@ -303,7 +321,9 @@ def invalid_locators(objs):
     return "Safe checking not yet supported"
 
 
-def export_locators(objs, filepath):
+def export_locators(objs, filepath) -> bool:
+    """Returns True if no locators reported errors"""
+    export_ok = True
     root = p3d_et()
     input_objs = []
     input_objs = [loc_obj for loc_obj in objs if loc_obj.locator_prop.is_locator]
@@ -311,8 +331,7 @@ def export_locators(objs, filepath):
     for loc_obj in input_objs:
         locator = write_chunk(root, LOC)
         write_val(locator, "Name", loc_obj.name)
-        write_val(locator, "LocatorType", str(
-            LTD_rev[loc_obj.locator_prop.loctype]))
+        write_val(locator, "LocatorType", str(LTD_rev[loc_obj.locator_prop.loctype]))
         write_xyz(locator, "Position", *loc_obj.location)
 
         # Locator Matrix 
@@ -360,6 +379,17 @@ def export_locators(objs, filepath):
 
         # Type 4 (SPLINE) support
         if loc_obj.locator_prop.loctype == 'SPLINE':
+            if not loc_obj.locator_prop.loc_spline:
+                print(f"{loc_obj.name} has no spline!")
+                export_ok = False
+                continue
+            if not valid_rail_cam_spline(loc_obj.locator_prop.loc_spline):
+                print(f"{loc_obj.name} has invalid spline!")
+                export_ok = False
+                continue
+            if loc_obj.locator_prop.loc_spline_car_only == loc_obj.locator_prop.loc_spline_on_foot_only:
+                print(f"{loc_obj.name} is both 'car only' and 'on foot only'. This can potentially crash the game")
+
             spline_chunk = write_chunk(locator, "0x3000007")
             write_val(spline_chunk, "Name", loc_obj.locator_prop.loc_spline.name)
             positions = write_val(spline_chunk, "Positions")
@@ -367,24 +397,18 @@ def export_locators(objs, filepath):
                 coords = loc_obj.locator_prop.loc_spline.matrix_world @ spline_point.co.to_3d()
                 write_xyz(positions, name=None, x=coords.x, y=coords.y, z=coords.z, element='Item')
 
-            Unknown = write_chunk(spline_chunk, "0x300000A")
+            rail_cam_chunk = write_chunk(spline_chunk, "0x300000A")
             DataDict = GetRailCamProps(loc_obj)
-            write_val(Unknown, "Name", DataDict["Name"])
-            write_val(Unknown, "Data", RailCamToB64(DataDict))
-
-        
+            write_val(rail_cam_chunk, "Name", DataDict["Name"])
+            write_val(rail_cam_chunk, "Data", RailCamToB64(DataDict))
         
         # Type 5 (ZONE) Support
         if loc_obj.locator_prop.loctype == 'ZONE':
             write_val(loc_data, "DynaLoadData", loc_obj.locator_prop.dynaload_string)
-
-
         
         # Type 6 (OCCLUSION) support
         if loc_obj.locator_prop.loctype == 'OCCLUSION':
             write_val(loc_data, "Occlusions", loc_obj.locator_prop.occlusions)
-
-
 
         # Type 7 (INTERIOR) and 8 (DIRECTION) Support
         if loc_obj.locator_prop.loctype in ['INTERIOR', 'DIRECTION']:
@@ -431,7 +455,15 @@ def export_locators(objs, filepath):
         if loc_obj.locator_prop.loctype == 'PED':
             write_val(loc_data, "Unknown", loc_obj.locator_prop.ped_group)
 
-        for vol_obj in [x for x in loc_obj.children if x.empty_display_type in ['CUBE','SPHERE']]:
-            write_volume(locator, vol_obj)
+        if locator_can_have_volume(loc_obj):
+            volumes = [x for x in loc_obj.children if x.empty_display_type in ['CUBE','SPHERE']]
+            if not volumes:
+                print(f"{loc_obj} has no trigger volumes!")
+                export_ok = False
+                continue
+            else:
+                for vol_obj in volumes:
+                    write_volume(locator, vol_obj)
         
     write_ET(root, filepath)
+    return export_ok

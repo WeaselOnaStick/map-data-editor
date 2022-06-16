@@ -251,36 +251,55 @@ def B64ToRailCam(DataString : str) -> dict:
     DataBytes = base64.standard_b64decode(DataString)
     DataUnpacked = struct.unpack("<iffififffffffff", DataBytes)
 
-    DataDict['Behaviour']           = DataUnpacked[0]
+    DataDict['Behaviour']           = 'DISTANCE' if DataUnpacked[0] == 0 else 'PROJECTION'
     DataDict['MinRadius']           = DataUnpacked[1]
     DataDict['MaxRadius']           = DataUnpacked[2]
-    DataDict['TrackRail']           = DataUnpacked[3]
+    DataDict['TrackRail']           = bool(DataUnpacked[3])
     DataDict['TrackDist']           = DataUnpacked[4]
-    DataDict['ReverseSense']        = DataUnpacked[5]
+    DataDict['ReverseSense']        = bool(DataUnpacked[5])
     DataDict['FOV']                 = math.radians(DataUnpacked[6])
     DataDict['TargetOffset']        = Vector((DataUnpacked[7],DataUnpacked[9],DataUnpacked[8]))
-    DataDict['AxisPlay']            = Vector((DataUnpacked[10],DataUnpacked[12],DataUnpacked[11]))
+    DataDict['AxisPlay']            = Vector((DataUnpacked[10],DataUnpacked[11],DataUnpacked[12]))
+    # AxisPlay hidden values 'deducted' from leaked SRR2
+    # Relax, this doesn't count as redistributing Radical's old code
+    DataDict['TransitionRate']      = DataDict['AxisPlay'].x
+    DataDict['FOVLagEnabled']       = DataDict['AxisPlay'].y != 1
+    APZ = int(DataDict['AxisPlay'].z)
+    DataDict['CarOnly']             = int(DataDict['AxisPlay'].z) & 1 != 0
+    DataDict['CutInOut']            = int(DataDict['AxisPlay'].z) & 2 != 0
+    DataDict['Reset']               = int(DataDict['AxisPlay'].z) & 4 != 0
+    DataDict['OnFootOnly']          = int(DataDict['AxisPlay'].z) & 8 != 0
     DataDict['PositionLag']         = DataUnpacked[13]
     DataDict['TargetLag']           = DataUnpacked[14]
     return DataDict
 
 
 def RailCamToB64(DataDict : dict) -> str:
+    #Hidden
+    DataDict['AxisPlay'] = Vector()
+    DataDict['AxisPlay'].x = DataDict['TransitionRate']
+    DataDict['AxisPlay'].y = 0 if DataDict['FOVLagEnabled'] else 1
+    DataDict['AxisPlay'].z = int(DataDict['CarOnly'])*1 + int(DataDict['CutInOut'])*2 + int(DataDict['Reset'])*4 + int(DataDict['OnFootOnly'])*8
+
+    DataDict['Behaviour'] = 0 if DataDict['Behaviour'] == 'DISTANCE' else 1
+    DataDict['TrackRail'] = int(DataDict['TrackRail'])
+    DataDict['ReverseSense'] = int(DataDict['ReverseSense'])
+    DataDict['FOV'] = math.degrees(DataDict['FOV'])
     DataBytes = struct.pack("<iffififffffffff",
-        DataDict['Behaviour'],
-        DataDict['MinRadius'],
-        DataDict['MaxRadius'],
-        DataDict['TrackRail'],
-        DataDict['TrackDist'],
-        DataDict['ReverseSense'],
-        math.degrees(DataDict['FOV']),
-        DataDict['TargetOffset'].x,
-        DataDict['TargetOffset'].z,
-        DataDict['TargetOffset'].y,
-        DataDict['AxisPlay'].x,
-        DataDict['AxisPlay'].z,
-        DataDict['AxisPlay'].y,
-        DataDict['PositionLag'],
-        DataDict['TargetLag'],
+        DataDict['Behaviour'],                              #i
+        DataDict['MinRadius'],                              #f
+        DataDict['MaxRadius'],                              #f
+        DataDict['TrackRail'],                              #i
+        DataDict['TrackDist'],                              #f
+        DataDict['ReverseSense'],                           #i
+        DataDict['FOV'],                                    #f
+        DataDict['TargetOffset'].x,                         #f
+        DataDict['TargetOffset'].z,                         #f
+        DataDict['TargetOffset'].y,                         #f
+        DataDict['AxisPlay'].x,                             #f
+        DataDict['AxisPlay'].y,                             #f
+        DataDict['AxisPlay'].z,                             #f
+        DataDict['PositionLag'],                            #f
+        DataDict['TargetLag'],                              #f
     )
     return str(base64.standard_b64encode(DataBytes))[2:-1]

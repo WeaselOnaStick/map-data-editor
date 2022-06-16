@@ -50,7 +50,7 @@ def import_fences(filepath):
     return fences
 
 def fence_flippable(obj : bpy.types.Object):
-    return obj.type == 'CURVE' and obj.data.splines
+    return obj is not None and obj.type == 'CURVE' and obj.data.splines
 
 def export_fences(filepath, objs):
     """If found 'faulty' fences were True"""

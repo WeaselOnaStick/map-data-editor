@@ -91,7 +91,7 @@ def register():
     )
 
     bpy.types.WindowManager.intersection_names_visible = bpy.props.BoolProperty(
-        default=True,
+        default=False,
         set=set_intersection_names_visible,
         get=get_intersection_names_visible,
         )
@@ -103,7 +103,10 @@ def set_intersection_names_visible(self, value):
             int_obj.show_name = bpy.context.window_manager.intersection_names_visible
 
 def get_intersection_names_visible(self):
-    return self["intersection_names_visible"]
+    if 'intersection_names_visible' in self:
+        return self["intersection_names_visible"]
+    else:
+        return False
 
 def unregister():
     from bpy.utils import unregister_class

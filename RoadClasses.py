@@ -661,7 +661,10 @@ class MDE_PT_Intersections(bpy.types.Panel, RoadModule):
     def draw(self, context):
         layout = self.layout
         layout.operator(IntersectCreate.bl_idname, icon='PLUS')
-        layout.prop(context.window_manager, "intersection_names_visible", text="Show Intersection Names", icon='HIDE_OFF' if context.window_manager.intersection_names_visible else 'HIDE_ON')
+        if context.window_manager.intersection_names_visible:
+            layout.prop(context.window_manager, "intersection_names_visible", text="Intersection Names ON", icon='HIDE_OFF')
+        else:
+            layout.prop(context.window_manager, "intersection_names_visible", text="Intersection Names OFF", icon='HIDE_ON')
         if context.object and is_intersection(context.object, context):
             layout.prop(context.object, 'scale', index=0, text='Radius')
             layout.prop(context.object, 'inter_road_beh')

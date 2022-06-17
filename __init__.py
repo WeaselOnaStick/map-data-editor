@@ -105,8 +105,7 @@ def set_intersection_names_visible(self, value):
 def get_intersection_names_visible(self):
     if 'intersection_names_visible' in self:
         return self["intersection_names_visible"]
-    else:
-        return False
+    return False
 
 def unregister():
     from bpy.utils import unregister_class

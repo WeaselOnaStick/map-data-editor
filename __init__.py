@@ -11,7 +11,7 @@ from . import InstanceClasses
 
 bl_info = {'name': "WMDE - Weasel's Map Data Editor",
            'author': 'Weasel On A Stick',
-           'version': (2, 2, 2),
+           'version': (2, 3, 0),
            'blender': (2, 93),
            'location': 'View3D > Sidebar > WMDE',
            'description': 'Edit SHAR map data, including: roads, paths, fences, locators, k-d Tree and other stuff',

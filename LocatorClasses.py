@@ -204,15 +204,11 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
     )
     # Type 12 (CAM) Support
     def is_camera(self, object : bpy.types.Object):
-        return object.type == 'CAMERA'
+        return object is not None and object.type == 'CAMERA'
     cam_obj: bpy.props.PointerProperty(
         name="Camera Object",
         type=bpy.types.Object, 
         poll=is_camera,
-    )
-    static_cam_test: bpy.props.PointerProperty(
-        type=bpy.types.Camera,
-        name='test'
     )
     cam_follow_player: bpy.props.BoolProperty(
         name="Follow Player"
@@ -582,7 +578,6 @@ class MDE_PT_Locators(bpy.types.Panel, LocatorModule):
         # Type 12 (CAM) Support
         if locator.locator_prop.loctype == 'CAM':
             box.prop(locator.locator_prop, "cam_obj")
-            box.prop(locator.locator_prop, "static_cam_test")
             if locator.locator_prop.cam_obj:
                 box.prop(locator.locator_prop.cam_obj.data, "angle")
             else:

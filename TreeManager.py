@@ -173,7 +173,6 @@ def grid_generate(gridsize = 20, marker_set = []):
     return T
 
 def import_tree(filepath):
-    #TODO Import and edit trees? If you're insane enough to think implementing this feature is a good idea, request it on WMDE github
     t = Tree()
     return t
 

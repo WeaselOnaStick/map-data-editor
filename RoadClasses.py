@@ -647,7 +647,6 @@ class MDE_PT_RoadFileManagement(bpy.types.Panel, RoadModule):
 
 
 class MDE_PT_Intersections(bpy.types.Panel, RoadModule):
-    #TODO Button to toggle being only able to select intersections(?)
     bl_label = 'Intersections'
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'

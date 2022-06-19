@@ -202,7 +202,8 @@ class IntersectCreate(bpy.types.Operator):
         return self.execute(context)
 
     def execute(self, context):
-        RoadManager.inter_create(GetIntersectionsCollection(context), self.name, self.location, self.radius, self.road_beh)
+        int_obj = RoadManager.inter_create(GetIntersectionsCollection(context), self.name, self.location, self.radius, self.road_beh)
+        int_obj.show_name = context.window_manager.intersection_names_visible
         return {'FINISHED'}
 
 def is_intersection(object : bpy.types.Object, context):

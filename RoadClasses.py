@@ -171,7 +171,7 @@ def GetIntersections(context) -> list:
 class IntersectCreate(bpy.types.Operator):
     """Create a road intersection"""
     bl_idname = 'object.intersect_create'
-    bl_label = 'Create an intersection'
+    bl_label = 'Create Intersection'
     bl_options = {'REGISTER', 'UNDO'}
     name: bpy.props.StringProperty(
         name='Intersection Name',
@@ -309,7 +309,7 @@ class RoadCreateAdjacent(bpy.types.Operator, RoadEditOperator): #Dirty macro
 class RoadSeparate(bpy.types.Operator, RShapeEditOperator):
     """Create a new road and move selected shapes into it"""
     bl_idname = 'object.road_separate'
-    bl_label = 'Separate by selection'
+    bl_label = 'Separate by Selection'
 
     @classmethod
     def poll(cls, context):
@@ -730,7 +730,7 @@ class MDE_PT_RoadShapes(bpy.types.Panel, RoadModule):
         grd = layout.grid_flow()
         grd.label(text='Editing')
         grd.operator(RShapeSelect.bl_idname, icon='RESTRICT_SELECT_OFF')
-        grd.operator(RShapeSelect.bl_idname, icon='FILE_REFRESH')
+        grd.operator(RShapeUpdate.bl_idname, icon='FILE_REFRESH')
         grd.operator(RShapeAdjustWidth.bl_idname, icon='ARROW_LEFTRIGHT')
         grd.operator(RShapeFlip.bl_idname, icon='UV_SYNC_SELECT')
         grd.operator(RShapeShift.bl_idname, icon='PAUSE')

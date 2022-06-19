@@ -8,10 +8,11 @@ class FileImportFences(bpy.types.Operator, ImportHelper):
     bl_idname = 'import_scene.fences_p3dxml'
     bl_label = 'Import Fences...'
     filename_ext = '.p3dxml'
-    filter_glob: bpy.props.StringProperty(default='*.p3dxml',
-                                          options={
-                                              'HIDDEN'},
-                                          maxlen=255)
+    filter_glob: bpy.props.StringProperty(
+        default='*.p3dxml',
+        options={'HIDDEN'},
+        maxlen=255,
+        )
 
     def execute(self, context):
         fence_objs = import_fences(self.filepath)
@@ -24,13 +25,16 @@ class FileExportFences(bpy.types.Operator, ExportHelper):
     bl_idname = 'export_scene.fences_p3dxml'
     bl_label = 'Export Fences...'
     filename_ext = '.p3dxml'
-    filter_glob: bpy.props.StringProperty(default='*.p3dxml',
-                                          options={
-                                              'HIDDEN'},
-                                          maxlen=255)
-    selected_only: bpy.props.BoolProperty(name='Selected Only',
-                                          description='Only export selected fences',
-                                          default=False)
+    filter_glob: bpy.props.StringProperty(
+        default='*.p3dxml',
+        options={'HIDDEN'},
+        maxlen=255,
+        )
+    selected_only: bpy.props.BoolProperty(
+        name='Selected Only',
+        description='Only export selected fences',
+        default=False,
+        )
 
     def execute(self, context):
         if self.selected_only:
@@ -58,8 +62,9 @@ class FenceCreate(bpy.types.Operator):
 
     def execute(self, context):
         fence_obj = fence_create(context.scene.cursor.location, context.scene.cursor.location + Vector((10,30,0)))
+        get_fence_collection(context).objects.link(fence_obj)
         fence_obj.select_set(True)
-        bpy.context.view_layer.objects.active = fence_obj
+        context.view_layer.objects.active = fence_obj
         bpy.ops.object.mode_set(mode='EDIT')
         return {'FINISHED'}
 

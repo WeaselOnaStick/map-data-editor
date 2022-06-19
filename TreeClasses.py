@@ -42,7 +42,7 @@ class LoadIntersectPoints(bpy.types.Operator, ImportHelper):
 class CreateMarkersFromMeshOperator(bpy.types.Operator):
     """Create intersect markers from selected mesh objects via raycasts from 20x20 grid.\n(CAN BE VERY SLOW FOR HUGE MESHES\nUse in such case "Create Markers Grid From Meshes")"""
     bl_idname = "object.create_intersect_markers_from_mesh"
-    bl_label = "Create Markers From Meshes"
+    bl_label = "Create Markers From Meshes (Ray Cast)"
     bl_options = {'REGISTER'}
 
     #check that we actually have mesh objects selected
@@ -169,8 +169,8 @@ class MDE_PT_TreeFileManagment(bpy.types.Panel, MiscModule):
     def draw(self, context):
         layout = self.layout
         layout.operator('import_scene.intersect_points', icon='IMPORT')
-        layout.operator('object.create_intersect_markers_from_mesh', icon='SHADERFX')
         layout.operator('object.create_intersect_markers_grid_from_mesh', icon='MESH_GRID')
+        layout.operator('object.create_intersect_markers_from_mesh', icon='SHADERFX')
         layout.operator('object.reset_intersect_markers', icon='TRASH')
         layout.operator('export_scene.grid_tree', icon='EXPORT')
 

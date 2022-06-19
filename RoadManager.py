@@ -8,7 +8,7 @@ from .utils_p3dxml import *
 add_object = bpy_extras.object_utils.object_data_add
 
 
-def inter_create(int_col : bpy.types.Collection, inter_name, position, radius, behaviour):
+def inter_create(int_col : bpy.types.Collection, inter_name, position, radius, behaviour) -> bpy.types.Object:
     inter = bpy.data.objects.new(inter_name, None)
     inter.inter_road_beh = behaviour
     inter.empty_display_type = 'SPHERE'

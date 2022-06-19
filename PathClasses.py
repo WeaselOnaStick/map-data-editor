@@ -89,7 +89,7 @@ class FileExportPaths(bpy.types.Operator, ExportHelper):
 
 class PathCreateBasic(bpy.types.Operator):
     bl_idname = 'object.path_create_basic'
-    bl_label = 'Create a Basic Path'
+    bl_label = 'Create Basic Path'
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -100,7 +100,7 @@ class PathCreateBasic(bpy.types.Operator):
 
 class PathCreateCircular(bpy.types.Operator):
     bl_idname = 'object.path_create_circular'
-    bl_label = 'Create a Circular Path'
+    bl_label = 'Create Circular Path'
     bl_options = {'REGISTER', 'UNDO'}
 
     radius: bpy.props.FloatProperty(

@@ -57,7 +57,7 @@ class FileExportFences(bpy.types.Operator, ExportHelper):
 
 class FenceCreate(bpy.types.Operator):
     bl_idname = 'object.fence_create'
-    bl_label = 'Create a Base Fence'
+    bl_label = 'Create Basic Fence'
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):

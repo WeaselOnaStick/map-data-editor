@@ -1,4 +1,4 @@
-import bmesh
+#import bmesh
 import bpy
 
 from .utils_bpy import *
@@ -27,6 +27,7 @@ def fence_create(a=Vector((0, 0, 0)), b=Vector((15, 15, 0))):
     fcs.use_endpoint_u = True
     fcs.use_smooth = False
     fco = bpy.data.objects.new('Fence', fc)
+    fco.lock_rotation = [True,True,False] # Prevent fences from being rotated on XY axis
     return fco
 
 

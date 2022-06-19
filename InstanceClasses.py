@@ -59,8 +59,6 @@ class Export_instance_listOperator(bpy.types.Operator, ExportHelper):
 
 
 class Import_instance_listOperator(bpy.types.Operator, ImportHelper):
-
-    #TODO: Importing lists fucks up rotation if active object doesn't have those applied
     bl_idname = "import_scene.list_instance"
     bl_label = "Import Instance List"
     filename_ext = '.p3dxml'
@@ -85,6 +83,8 @@ class Import_instance_listOperator(bpy.types.Operator, ImportHelper):
             instance_source = None
 
         root = terra_read(self.filepath)
+        if root.tag == 'Pure3DFile':
+            root = root[0]
         if root.attrib['Type'] == "0x3000008":
             IL = root
         elif find_chunks(root, "0x3000008"):

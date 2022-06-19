@@ -395,7 +395,7 @@ class RShapeUpdate(bpy.types.Operator, RShapeEditOperator):
 class RShapeCreateElliptic(bpy.types.Operator, RShapeAddOperator):
     """Create a set of roadshapes forming an ellipse"""
     bl_idname = 'object.road_shape_create_elliptic'
-    bl_label = 'Create elliptic road'
+    bl_label = 'Create Elliptic Road'
     bl_options = {'REGISTER', 'UNDO'}
     angle: bpy.props.FloatProperty(
         description='Angle of the curve',
@@ -441,30 +441,40 @@ class RShapeCreateElliptic(bpy.types.Operator, RShapeAddOperator):
 class RShapeCreateStraight(bpy.types.Operator, RShapeAddOperator):
     """Create a set of roadshapes in a straight line"""
     bl_idname = 'object.road_shape_create_straight'
-    bl_label = 'Create a row of road pieces'
+    bl_label = 'Create Straight Road'
     bl_options = {'REGISTER', 'UNDO'}
-    loc: bpy.props.FloatVectorProperty(name='Location',
-                                       subtype='XYZ',
-                                       unit='LENGTH')
-    rot: bpy.props.FloatVectorProperty(name='Rotation',
-                                       subtype='EULER',
-                                       unit='ROTATION')
-    resolution: bpy.props.IntProperty(description='Amount of road shapes in an array',
-                                      name='Quality',
-                                      min=1,
-                                      soft_max=20,
-                                      default=5)
-    width: bpy.props.FloatProperty(description='Entire width of the road',
-                                   name='Width',
-                                   min=0.001,
-                                   soft_max=4,
-                                   default=6,
-                                   unit='LENGTH')
-    length: bpy.props.FloatProperty(description='Entire length of the road',
-                                    name='Length',
-                                    min=0.001,
-                                    default=30,
-                                    unit='LENGTH')
+    loc: bpy.props.FloatVectorProperty(
+        name='Location',
+       subtype='XYZ',
+       unit='LENGTH',
+       )
+    rot: bpy.props.FloatVectorProperty(
+        name='Rotation',
+        subtype='EULER',
+        unit='ROTATION',
+        )
+    resolution: bpy.props.IntProperty(
+        description='Amount of road shapes in an array',
+        name='Quality',
+        min=1,
+        soft_max=20,
+        default=5,
+        )
+    width: bpy.props.FloatProperty(
+        description='Entire width of the road',
+        name='Width',
+        min=0.001,
+        soft_max=4,
+        default=6,
+        unit='LENGTH',
+        )
+    length: bpy.props.FloatProperty(
+        description='Entire length of the road',
+        name='Length',
+        min=0.001,
+        default=30,
+        unit='LENGTH',
+        )
 
     def invoke(self, context, event):
         self.loc_x = context.scene.cursor.location.x
@@ -480,7 +490,7 @@ class RShapeCreateStraight(bpy.types.Operator, RShapeAddOperator):
 class RShapePrepareCurve(bpy.types.Operator, RShapeAddOperator):
     """RShapePrepareCurve"""
     bl_idname = 'object.road_shape_prepare_bezier'
-    bl_label = 'Prepare bezier road'
+    bl_label = 'Prepare Bezier Road'
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -514,7 +524,7 @@ def ContextIsRCurve(context):
 class RShapeFinalizeCurve(bpy.types.Operator):
     """RShapeFinalizeCurve"""
     bl_idname = 'object.road_shape_finalize_bezier'
-    bl_label = 'Finalize bezier road'
+    bl_label = 'Finalize Bezier Road'
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -572,7 +582,7 @@ class RShapeShift(bpy.types.Operator, RShapeEditOperator):
 
 class RShapeAdjustWidth(bpy.types.Operator, RShapeEditOperator):
     bl_idname = 'object.road_shape_adjust_width'
-    bl_label = 'Adjust width'
+    bl_label = 'Adjust Width'
     bl_options = {'REGISTER', 'UNDO'}
     delta: bpy.props.FloatProperty(name='Adjust width by', subtype='DISTANCE', unit='LENGTH', default=0.3)
 
@@ -598,7 +608,7 @@ class RShapeAdjustWidth(bpy.types.Operator, RShapeEditOperator):
 class RShapeFlip(bpy.types.Operator, RShapeEditOperator):
     """RShapeFlip"""
     bl_idname = 'object.road_shape_flip'
-    bl_label = 'Flip direction'
+    bl_label = 'Flip Direction'
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):

@@ -65,8 +65,8 @@ class FileExportPaths(bpy.types.Operator, ExportHelper):
             if len(path_obj.data.splines[0].points) > 32:
                 invalid_objs.append(path_obj)
 
-        if invalid_objs:
-            valid_objs = [x for x in objs if not x in invalid_objs]
+
+        valid_objs = [x for x in objs if not x in invalid_objs]
                 
 
         result = export_paths(self.filepath, valid_objs)

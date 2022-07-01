@@ -7,8 +7,28 @@ from . import utils_math
 from .utils_p3dxml import *
 add_object = bpy_extras.object_utils.object_data_add
 
+def GetRoadsCollection(context) -> bpy.types.Collection:
+    if 'Road Nodes' not in bpy.data.collections:
+        road_col = bpy.data.collections.new('Road Nodes')
+        context.scene.collection.children.link(road_col)
+    else:
+        road_col = bpy.data.collections['Road Nodes']
+    return road_col
 
-def inter_create(int_col : bpy.types.Collection, inter_name, position, radius, behaviour) -> bpy.types.Object:
+
+def GetIntersectionsCollection(context) -> bpy.types.Collection:
+    if 'Intersections' not in bpy.data.collections:
+        int_col = bpy.data.collections.new('Intersections')
+        context.scene.collection.children.link(int_col)
+    else:
+        int_col = bpy.data.collections['Intersections']
+    return int_col
+
+def GetIntersections(context) -> list:
+    return GetIntersectionsCollection(context).objects
+
+
+def inter_create(inter_name, position, radius, behaviour, int_col : bpy.types.Collection) -> bpy.types.Object:
     inter = bpy.data.objects.new(inter_name, None)
     inter.inter_road_beh = behaviour
     inter.empty_display_type = 'SPHERE'
@@ -26,16 +46,13 @@ def inter_create(int_col : bpy.types.Collection, inter_name, position, radius, b
     dsz.driver.expression = 'self.scale[0]'
     inter.location = position
     inter.scale[0] = radius
+    #int_col = GetIntersectionsCollection(bpy.context)
     int_col.objects.link(inter)
     return inter
 
 
 def r_create(context, road_name):
-    if 'Road Nodes' not in bpy.data.collections:
-        road_col = bpy.data.collections.new('Road Nodes')
-        bpy.context.scene.collection.children.link(road_col)
-    else:
-        road_col = bpy.data.collections['Road Nodes']
+    road_col = GetRoadsCollection(context)
     col = bpy.data.collections.new(road_name)
     col.road_node_prop.to_export = True
     road_col.children.link(col)
@@ -44,7 +61,7 @@ def r_create(context, road_name):
     return col
 
 
-def r_import(name, start_inter, end_inter, lanes, max_cars, speed, intel, short, unknown, try_sort=False):
+def r_import(name, start_inter, end_inter, lanes, max_cars, speed, intel, short, unknown, all_roads_collection : bpy.types.Collection, try_sort=False):
     """same as r_create but for predefined roads such as imported ones. Adds the road to master/Road Nodes collection"""
     col = bpy.data.collections.new(name)
     props = col.road_node_prop
@@ -57,19 +74,16 @@ def r_import(name, start_inter, end_inter, lanes, max_cars, speed, intel, short,
     props.intel = intel
     props.short = short
     props.unknown = unknown
-    if 'Road Nodes' not in bpy.data.collections:
-        road_col = bpy.data.collections.new('Road Nodes')
-        bpy.context.scene.collection.children.link(road_col)
-    else:
-        road_col = bpy.data.collections['Road Nodes']
     if try_sort:
         zone = name[:2]
         if zone in bpy.data.collections:
-            road_col = bpy.data.collections[zone]
+            zone_col = bpy.data.collections[zone]
         else:
-            road_col = bpy.data.collections.new(zone)
-            bpy.data.collections['Road Nodes'].children.link(road_col)
-    road_col.children.link(col)
+            zone_col = bpy.data.collections.new(zone)
+            all_roads_collection.children.link(zone_col)
+        zone_col.children.link(col)
+    else:
+        all_roads_collection.children.link(col)
     return col
 
 
@@ -207,14 +221,16 @@ def rs_evaluate_verts(road_shape):
     return locs
 
 
-def import_roads_and_intersections(filepath, try_sort):
+def import_roads_and_intersections(filepath, try_sort, context):
     root = terra_read(filepath)
-    import_intersects(root)
-    import_roads(root, try_sort)
+    intersections_collection = GetIntersectionsCollection(context if context else bpy.context)
+    import_intersects(root, intersections_collection)
+    all_roads_collection = GetRoadsCollection(context if context else bpy.context)
+    import_roads(root, try_sort, all_roads_collection)
 
 
-def import_roads(root, try_sort):
-    time_start = time()
+def import_roads(root, try_sort, all_roads_collection):
+    #time_start = time()
     road_counter = 0
     road_shape_counter = 0
     all_road_shapes = chunks_to_dict_by_name(find_chunks(root, RDS))
@@ -230,7 +246,7 @@ def import_roads(root, try_sort):
         unkown = int(find_val(road, 'Unknown4'))
         noreset = int(find_val(road, 'NoReset'))
         lanes = False
-        r_col = r_import(r_name, start_inter, end_inter, 2, max_cars, speed, intel, noreset, unkown, try_sort=try_sort)
+        r_col = r_import(r_name, start_inter, end_inter, 2, max_cars, speed, intel, noreset, unkown, all_roads_collection, try_sort=try_sort)
         for road_seg in find_chunks(road, RSG):
             road_shape_counter += 1
             road_seg_name = find_val(road_seg, 'CubeShape')
@@ -244,22 +260,22 @@ def import_roads(root, try_sort):
 
         r_col.road_node_prop.lanes = lanes
 
-    print(f"Imported {road_counter} Roads and {road_shape_counter} Road Shapes in {time() - time_start:.3f} seconds")
+    #print(f"Imported {road_counter} Roads and {road_shape_counter} Road Shapes in {time() - time_start:.3f} seconds")
 
 
-def import_intersects(root):
-    time_start = time()
-    inter_counter = 0
+def import_intersects(root, intersections_collection):
+    #time_start = time()
+    #inter_counter = 0
     for i in find_chunks(root, INS):
-        inter_counter += 1
+        #inter_counter += 1
         name = find_val(i, 'Name')
         pos = find_xyz(i, 'Position')
         rad = float(find_val(i, 'Radius'))
         beh = int(find_val(i, 'TrafficBehaviour'))
         if name not in bpy.data.objects:
-            inter_create(name, pos, rad, beh)
+            inter_create(name, pos, rad, beh, intersections_collection)
 
-    print(f"Imported {inter_counter} Intersections in {time() - time_start:.3f} seconds")
+    #print(f"Imported {inter_counter} Intersections in {time() - time_start:.3f} seconds")
 
 
 def invalid_roads(road_cols, inter_objs, margin):

@@ -1,9 +1,9 @@
-from typing import Collection
 import bpy
 from bpy.props import *
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 from .utils_bpy import *
 from . import RoadManager
+from .RoadManager import GetIntersections, GetIntersectionsCollection
 from math import radians
 from .utils_bpy import pcoll
 import os
@@ -92,7 +92,7 @@ class FileImportRoads(bpy.types.Operator, ImportHelper):
         )
 
     def execute(self, context):
-        RoadManager.import_roads_and_intersections(self.filepath, self.try_sort)
+        RoadManager.import_roads_and_intersections(self.filepath, self.try_sort, context)
         return {'FINISHED'}
 
 
@@ -157,17 +157,6 @@ class FileExportRoadsAndIntersects(bpy.types.Operator, ExportHelper):
             {'INFO'}, f"Successfully exported {os.path.basename(self.filepath)}")
         return {'FINISHED'}
 
-def GetIntersectionsCollection(context) -> bpy.types.Collection:
-    if 'Intersections' not in bpy.data.collections:
-        int_col = bpy.data.collections.new('Intersections')
-        context.scene.collection.children.link(int_col)
-    else:
-        int_col = bpy.data.collections['Intersections']
-    return int_col
-
-def GetIntersections(context) -> list:
-    return GetIntersectionsCollection(context).objects
-
 class IntersectCreate(bpy.types.Operator):
     """Create a road intersection"""
     bl_idname = 'object.intersect_create'
@@ -202,7 +191,7 @@ class IntersectCreate(bpy.types.Operator):
         return self.execute(context)
 
     def execute(self, context):
-        int_obj = RoadManager.inter_create(GetIntersectionsCollection(context), self.name, self.location, self.radius, self.road_beh)
+        int_obj = RoadManager.inter_create(self.name, self.location, self.radius, self.road_beh, GetIntersectionsCollection(context))
         int_obj.show_name = context.window_manager.intersection_names_visible
         return {'FINISHED'}
 

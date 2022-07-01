@@ -11,7 +11,7 @@ from . import InstanceClasses
 
 bl_info = {'name': "WMDE - Weasel's Map Data Editor",
            'author': 'Weasel On A Stick',
-           'version': (2, 3, 0),
+           'version': (2, 3, 1),
            'blender': (2, 93),
            'location': 'View3D > Sidebar > WMDE',
            'description': 'Edit SHAR map data, including: roads, paths, fences, locators, k-d Tree and other stuff',
@@ -96,7 +96,7 @@ def register():
         get=get_intersection_names_visible,
         )
 
-from .RoadClasses import GetIntersectionsCollection
+from .RoadManager import GetIntersectionsCollection
 def set_intersection_names_visible(self, value):
     self["intersection_names_visible"] = value
     for int_obj in GetIntersectionsCollection(bpy.context).objects:

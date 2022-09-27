@@ -1,12 +1,16 @@
+from collections import Counter
+from datetime import date
 import bpy
 from bpy.props import *
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 from .utils_bpy import *
 from . import RoadManager
-from .RoadManager import GetIntersections, GetIntersectionsCollection
-from math import radians
-from .utils_bpy import pcoll
+from .RoadManager import GetIntersections, GetIntersectionsCollection, r_create, rs_create_base
+from math import radians, dist
+from .utils_bpy import pcoll, get_connected_faces, get_connected_verts
+import mathutils
 import os
+
 RoadProps = [
     'to_export', 
     'inter_start', 
@@ -322,6 +326,101 @@ class RoadSeparate(bpy.types.Operator, RShapeEditOperator):
 
         return {'FINISHED'}
 
+class RoadCreateFromSelectedQuads(bpy.types.Operator):
+    """Select a continuous strip of quads in any mesh and create a new road from them"""
+    bl_idname = 'object.road_create_from_quads'
+    bl_label = 'New Road From Selected Quads'
+
+    @classmethod
+    def poll(cls, context):
+        return context.object and context.object.type == 'MESH'
+
+    def execute(self, context):
+        #Not advised to refactor this inside RoadManager.py
+
+        #TODO RoadCreateFromSelectedQuads
+
+        # handle invalid input
+        #if context.mode != 'OBJECT':
+            #bpy.ops.object.mode_set(mode='OBJECT')
+        target_obj = context.object
+        target_mesh = bpy.types.Mesh(target_obj.data)
+        polys = [x for x in target_mesh.polygons if x.select]
+        active_poly = target_mesh.polygons[target_mesh.polygons.active]
+        if not polys:
+            self.report({'ERROR_INVALID_INPUT'}, "No faces selected")
+            return {'CANCELLED'}
+
+        if not all([len(x.vertices) == 4 for x in polys]):
+            self.report({'ERROR_INVALID_INPUT'}, "Non-Quad faces selected")
+            return {'CANCELLED'}
+
+        if len(polys) == 1:
+            road_collection = r_create(context)
+            rs_create_base(road_collection,*[target_mesh.vertices[x].co @ target_obj.matrix_world for x in polys[0].vertices[:]])
+            return {'FINISHED'}
+
+
+        qverts = [] #Quad Verts
+        for x in polys:
+            qverts += x.vertices[:]        
+        qverts_c = Counter(qverts) #Quad Verts Counted
+        single_qverts = [x for x in qverts_c if qverts_c[x] == 1]
+
+        if set(qverts_c.values()) != {1,2} or len(single_qverts) != 4:
+            self.report({'ERROR_INVALID_INPUT'}, "Disconnected strip of quads selected")
+            return {'CANCELLED'}
+
+        if not any([x in single_qverts for x in active_poly.vertices[:]]):
+            self.report({'ERROR_INVALID_INPUT'}, "Active quad not at the start of the strip")
+            return {'CANCELLED'}
+
+        road_quads = []
+        
+        def quad_process(road_quads, p : bpy.types.MeshPolygon, a : int, d : int, b = None, c = None):
+            if b is None or c is None:
+                b = (set(get_connected_verts(a, target_mesh.edges)) & set(p.vertices[:]) - {a,d}).pop()
+                c = (set(get_connected_verts(d, target_mesh.edges)) & set(p.vertices[:]) - {a,d}).pop()
+            road_quads.append(tuple([target_obj.matrix_world @ target_mesh.vertices[x].co for x in (a,b,c,d)]))
+            return b,c
+
+        #find first quad points + orientation
+        #find id of last quad
+        a,d = None, None
+        poly_s, poly_e = active_poly, None #polygon at the Start and End
+        a,d = set(single_qverts) & set(poly_s.vertices[:])
+        a_co = target_mesh.vertices[a].co
+        d_co = target_mesh.vertices[d].co
+        aa = (set(get_connected_verts(a, target_mesh.edges)) & set(poly_s.vertices[:]) - {a,d}).pop()
+        aa_co = target_mesh.vertices[aa].co
+        if ((d_co-a_co).cross(aa_co-a_co)).dot(poly_s.normal) < 0:
+            a,d = d,a
+        a,d = quad_process(road_quads, poly_s, a, d)
+        
+        poly_e = [x for x in polys if any([y in single_qverts for y in x.vertices[:]]) and x != active_poly][0]
+
+        #poly_cur = get_connected_faces(poly_s, polys)[0]
+        poly_cur = poly_s
+        polys_travelled = {poly_s}
+        while poly_cur != poly_e:
+            poly_cur = (set(get_connected_faces(poly_cur, polys)) - polys_travelled).pop()
+            polys_travelled.add(poly_cur)
+            a,d = quad_process(road_quads, poly_cur, a, d)
+
+        #keep finding connected+selected polys until it's ID matches that of last quad
+        if len(road_quads) != len(polys):
+            self.report({'WARNING'}, "Something's wrong...")
+
+        #loop over added quads, create road shapes and add them to road collection
+        #print(road_quads)
+        
+        #create road collection
+
+        road_collection = r_create(context)
+        for q_co in road_quads:
+            rs_create_base(road_collection,*q_co)
+        
+        return {'FINISHED'}
 
 class RShapeAddOperator:
     """RShapeAddOperator"""
@@ -491,7 +590,6 @@ class RShapePrepareCurve(bpy.types.Operator, RShapeAddOperator):
         context.view_layer.objects.active = curve_obj
         curve_obj.select_set(True)
         return {'FINISHED'}
-
 
 def ContextIsRCurve(context):
     if not context.selected_objects:
@@ -688,6 +786,7 @@ class MDE_PT_Roads(bpy.types.Panel, RoadModule):
         this_col = get_current_road_collection(context)
         layout = self.layout
         layout.operator(RoadCreate.bl_idname, icon='PLUS')
+        layout.operator(RoadCreateFromSelectedQuads.bl_idname, icon='EDGESEL')
         if not get_current_road_collection(context):
             return
         if not this_col.road_node_prop.to_export:
@@ -769,6 +868,7 @@ to_register = [
     RShapeShiftAdjacent,
     RShapeUpdate,
     RoadCreate,
+    RoadCreateFromSelectedQuads,
     RoadCreateAdjacent,
     RoadDelete,
     RoadDuplicate,

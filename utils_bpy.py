@@ -2,8 +2,23 @@ import bpy
 import os
 from os import path
 
+def get_connected_verts(x : int,edges : bpy.types.MeshEdges):
+    """return list of verts indexes that share an edge with vert x"""
+    ans = []
+    for e in edges:
+        if  x == e.vertices[0]:
+            ans.append(e.vertices[1])
+        elif x == e.vertices[1]:
+            ans.append(e.vertices[0])
+    return ans
+
+def get_connected_faces(x : bpy.types.MeshPolygon, faces : bpy.types.MeshPolygons):
+    """return list of MeshPolygon (not indexes) that share a vertex"""
+    x_verts_set = set(x.vertices[:])
+    return [f for f in faces if x_verts_set & set(f.vertices[:]) and f != x]
 
 def get_current_road_collection(context):
+    """IF current selection is related to a proper road collection (active outliner collection, active object is inside a collection, etc.), returns that collection"""
     if len(context.selected_objects) >= 1 and context.selected_objects[0].users_collection[0].road_node_prop.to_export:
         return context.selected_objects[0].users_collection[0]
     if context.object and context.object.users_collection[0].road_node_prop.to_export:

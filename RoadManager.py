@@ -8,6 +8,7 @@ from .utils_p3dxml import *
 add_object = bpy_extras.object_utils.object_data_add
 
 def GetRoadsCollection(context) -> bpy.types.Collection:
+    """Returns master Road Nodes collection. Creates one if needed"""
     if 'Road Nodes' not in bpy.data.collections:
         road_col = bpy.data.collections.new('Road Nodes')
         context.scene.collection.children.link(road_col)
@@ -51,7 +52,8 @@ def inter_create(inter_name, position, radius, behaviour, int_col : bpy.types.Co
     return inter
 
 
-def r_create(context, road_name):
+def r_create(context, road_name = "RoadCollection") -> bpy.types.Collection:
+    """create a road collection and make it active"""
     road_col = GetRoadsCollection(context)
     col = bpy.data.collections.new(road_name)
     col.road_node_prop.to_export = True
@@ -88,6 +90,7 @@ def r_import(name, start_inter, end_inter, lanes, max_cars, speed, intel, short,
 
 
 def rs_create_base(collection, a=None, b=None, c=None, d=None, name='RoadShape'):
+    """create basic Road Shape with verts at (a,b,c,d)"""
     M = bpy.data.meshes.new(name)
     loc = a
     r_v = [Vector(), (b - a) / 2, b - a, b + (c - b) / 2 - a, c - a, c + (d - c) / 2 - a, d - a, d + (a - d) / 2 - a]

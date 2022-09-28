@@ -5,14 +5,14 @@ from bpy.props import *
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 from .utils_bpy import *
 from . import RoadManager
-from .RoadManager import GetIntersections, GetIntersectionsCollection, r_create, rs_create_base
+from .RoadManager import GetIntersections, GetIntersectionsCollection, inter_create, r_create, rs_create_base
 from math import radians, dist
 from .utils_bpy import pcoll, get_connected_faces, get_connected_verts
 import mathutils
 import os
 
-RoadProps = [
-    'to_export', 
+RoadPropsExposed = [
+    #'to_export', 
     'inter_start', 
     'inter_end', 
     'lanes', 
@@ -104,7 +104,7 @@ class FileExportRoadsAndIntersects(bpy.types.Operator, ExportHelper):
     #TODO Export CustomLimits.ini limits
     #TODO Export CustomRoadBehaviour xml(?)
     #TODO "Visible only" checkbox
-    #TODO safety checks (no intersections, no roads, None intersections in roads etc.)
+    #TODO! safety checks (no intersections, no roads, None intersections in roads etc.)
     bl_idname = 'export_scene.roads_p3dxml'
     bl_label = 'Export Roads...'
     filename_ext = '.p3dxml'
@@ -209,9 +209,40 @@ class IntersectionsCreateAtFaces(bpy.types.Operator):
     bl_label = 'Create Intersections At Faces'
     bl_options = {'REGISTER', 'UNDO'}
 
+    rad_methods_enum = [
+        ("MAX", "Maximum", "",0),
+        ("MIN", "Minimum", "",1),
+        ("AVG", "Average", "",2)
+    ]
+    rad_method: bpy.props.EnumProperty(
+        items=rad_methods_enum,
+        name="Radius Calculation Method",
+        default='MAX',
+    )
+
+    @classmethod
+    def poll(cls, context):
+        return context.object and context.object.type == 'MESH'
+
     def execute(self, context):
-        #TODO IntersectionsCreateAtFaces
+        #TODO! IntersectionsCreateAtFaces
+        target_obj = context.object
+        og_mode = str(target_obj.mode)
+        target_mesh = bpy.types.Mesh(target_obj.data)
+        if og_mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+        for poly in target_mesh.polygons:
+            if not poly.select : continue
+            if self.rad_method == 'MAX':
+                r = max([(target_mesh.vertices[x].co @ target_obj.matrix_world - poly.center @ target_obj.matrix_world).length for x in poly.vertices])
+            elif self.rad_method == 'MIN':
+                r = min([(target_mesh.vertices[x].co @ target_obj.matrix_world - poly.center @ target_obj.matrix_world).length for x in poly.vertices])
+            elif self.rad_method == 'AVG':
+                r = sum([(target_mesh.vertices[x].co @ target_obj.matrix_world - poly.center @ target_obj.matrix_world).length for x in poly.vertices])/len(poly.vertices[:])
+            inter_create("wzIntersection", poly.center @ target_obj.matrix_world, r, 1, GetIntersectionsCollection(context))
         self.report({'WARNING'}, "WIP")
+        bpy.ops.object.mode_set(mode = og_mode)
         return {'FINISHED'}
 
 class RoadEditOperator:
@@ -449,7 +480,7 @@ class RoadsAutoConnect(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        #TODO RoadsAutoConnect
+        #TODO! RoadsAutoConnect
         self.report({'WARNING'}, "WIP")
         return {'FINISHED'}
 
@@ -459,7 +490,7 @@ class RoadsBatchEditProps(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        #TODO RoadsBatchEditProps
+        #TODO! RoadsBatchEditProps
         self.report({'WARNING'}, "WIP")
         return {'FINISHED'}
 
@@ -791,7 +822,7 @@ class MDE_PT_Intersections(bpy.types.Panel, RoadModule):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'WMDE Roads'
-    bl_order = 3
+    bl_order = 1
 
     def draw_header(self, context):
         layout = self.layout
@@ -812,12 +843,11 @@ class MDE_PT_Intersections(bpy.types.Panel, RoadModule):
 
 
 class MDE_PT_Roads(bpy.types.Panel, RoadModule):
-    #TODO Operator to batch change properties of many at once(?)
     bl_label = "Road Nodes"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'WMDE Roads'
-    bl_order = 1
+    bl_order = 2
 
     def draw_header(self, context):
         layout = self.layout
@@ -843,10 +873,14 @@ class MDE_PT_Roads(bpy.types.Panel, RoadModule):
         layout.operator(RoadSeparate.bl_idname, icon='UNLINKED')
         box = layout.box()
         box.label(text=f"Road properties:", icon='PROPERTIES')
-        grid = box.grid_flow(row_major=False)
+        grid = box.grid_flow(row_major=True)
         if cur_road_col.road_node_prop.to_export:
-            for road_prop in RoadProps:
-                grid.prop(cur_road_col.road_node_prop, road_prop)
+            for road_prop in RoadPropsExposed:
+                if road_prop in ['inter_start', 'inter_end']:
+                    col = grid.column()
+                    col.prop(cur_road_col.road_node_prop, road_prop)
+                else:
+                    grid.prop(cur_road_col.road_node_prop, road_prop)
                 if road_prop == 'inter_end':
                     if cur_road_col.road_node_prop.inter_start == cur_road_col.road_node_prop.inter_end:
                         warning_box = grid.box()
@@ -869,7 +903,7 @@ class MDE_PT_RoadShapes(bpy.types.Panel, RoadModule):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'WMDE Roads'
-    bl_order = 2
+    bl_order = 3
 
     def draw_header(self, context):
         layout = self.layout

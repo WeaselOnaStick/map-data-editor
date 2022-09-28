@@ -61,13 +61,22 @@ class FenceCreate(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        fence_obj = fence_create(context.scene.cursor.location, context.scene.cursor.location + Vector((10,30,0)))
+        fence_obj = fence_create([context.scene.cursor.location, context.scene.cursor.location + Vector((10,30,0))])
         get_fence_collection(context).objects.link(fence_obj)
         fence_obj.select_set(True)
         context.view_layer.objects.active = fence_obj
         bpy.ops.object.mode_set(mode='EDIT')
         return {'FINISHED'}
 
+class FenceCreateFromSelectedEdges(bpy.types.Operator):
+    #TODO FenceCreateFromSelectedEdges operator
+    bl_idname = 'object.fence_create_from_edges'
+    bl_label = 'Create Fence From Selected Edges'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        self.report({'WARNING'}, "WIP")
+        return {'FINISHED'}
 
 class FenceFlip(bpy.types.Operator):
     bl_idname = 'object.fence_flip'
@@ -171,10 +180,12 @@ class MDE_PT_Fences(bpy.types.Panel, FenceModule):
         col = layout.column()
         col.prop((context.area.spaces[0].overlay), 'show_face_orientation', text='Display Face Orientation', icon='NORMALS_FACE')
         col.operator((FenceCreate.bl_idname), icon='PLUS')
+        col.operator((FenceCreateFromSelectedEdges.bl_idname), text = 'Create From Selected Edges',icon='EDGESEL')
         col.operator((FenceFlip.bl_idname), icon='UV_SYNC_SELECT')
 
 to_register = [
     FenceCreate,
+    FenceCreateFromSelectedEdges,
     FenceFlip,
     FileExportFences,
     FileImportFences,

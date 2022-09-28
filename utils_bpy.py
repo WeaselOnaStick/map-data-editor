@@ -23,7 +23,7 @@ def get_current_road_collection(context):
         return context.selected_objects[0].users_collection[0]
     if context.object and context.object.users_collection[0].road_node_prop.to_export:
         return context.object.users_collection[0]
-    if context.view_layer.active_layer_collection.collection != context.scene.collection:
+    if context.view_layer.active_layer_collection.collection.road_node_prop.to_export:
         return context.view_layer.active_layer_collection.collection
     return False
 

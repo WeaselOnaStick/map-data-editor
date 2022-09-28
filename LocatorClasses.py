@@ -75,7 +75,7 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
     )
     loc_spline_behaviour: bpy.props.EnumProperty(
         name='Behaviour',
-        description="Description To Be Added", #TODO loc_spline_behaviour description
+        description="Description To Be Added", #TODO? loc_spline_behaviour description
         items=[
             ('DISTANCE','Distance','Description To Be Added'),
             ('PROJECTION','Projection','Description To Be Added'),
@@ -86,30 +86,30 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
         default=0.2,
         precision=6,
         soft_min=0,
-        description="Description To Be Added", #TODO loc_spline_min_radius description
+        description="Description To Be Added", #TODO? loc_spline_min_radius description
     )
     loc_spline_max_radius: bpy.props.FloatProperty(
         name="Max Radius",
         default=0.4,
         precision=6,
         soft_min=0,
-        description="Description To Be Added", #TODO loc_spline_max_radius description
+        description="Description To Be Added", #TODO? loc_spline_max_radius description
     )
     loc_spline_track_rail: bpy.props.BoolProperty(
         name="Track Rail",
         default=False,
-        description="Description To Be Added", #TODO loc_spline_track_rail description
+        description="Description To Be Added", #TODO? loc_spline_track_rail description
     )
     loc_spline_track_dist: bpy.props.FloatProperty(
         name="Track Distance",
         default=0.002,
         precision=6,
-        description="Description To Be Added", #TODO loc_spline_track_dist description
+        description="Description To Be Added", #TODO? loc_spline_track_dist description
     )
     loc_spline_reverse_sense: bpy.props.BoolProperty(
         name="Reverse Sense",
         default=False,
-        description="Description To Be Added", #TODO loc_spline_reverse_sense description
+        description="Description To Be Added", #TODO? loc_spline_reverse_sense description
     )
     loc_spline_fov: bpy.props.FloatProperty(
         name="Field of View",
@@ -126,14 +126,14 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
         subtype='TRANSLATION',
         unit='LENGTH',
         precision=4,
-        description="Description To Be Added", #TODO loc_spline_target_offset description
+        description="Description To Be Added", #TODO? loc_spline_target_offset description
     )
     loc_spline_transition_rate: bpy.props.FloatProperty(
         name='Transition Rate',
         soft_min=0,
         soft_max=1,
         precision=4,
-        description="Description To Be Added (Possibly not implemented properly)", #TODO loc_spline_transition_rate description
+        description="Description To Be Added (Possibly not implemented properly)", #TODO? loc_spline_transition_rate description
     )
     loc_spline_FOV_lag: bpy.props.BoolProperty(
         name='FOV Lag Enabled',
@@ -141,31 +141,31 @@ class LocatorPropGroup(bpy.types.PropertyGroup):
     )
     loc_spline_car_only: bpy.props.BoolProperty(
         name='Car Only',
-        description="Description To Be Added", #TODO loc_spline_car_only description
+        description="Description To Be Added", #TODO? loc_spline_car_only description
     )
     loc_spline_cut_in_out: bpy.props.BoolProperty(
         name='Cut In Out',
-        description="Description To Be Added", #TODO loc_spline_car_only description
+        description="Description To Be Added", #TODO? loc_spline_car_only description
     )
     loc_spline_reset: bpy.props.BoolProperty(
         name='Reset',
-        description="Most likely Unused", #TODO loc_spline_car_only description
+        description="Most likely Unused", #TODO? loc_spline_car_only description
     )
     loc_spline_on_foot_only: bpy.props.BoolProperty(
         name='On Foot Only',
-        description="Description To Be Added", #TODO loc_spline_car_only description
+        description="Description To Be Added", #TODO? loc_spline_car_only description
     )
     loc_spline_position_lag: bpy.props.FloatProperty(
         name="Position Lag",
         default=0.3,
         precision=6,
-        description="Description To Be Added", #TODO loc_spline_car_only description
+        description="Description To Be Added", #TODO? loc_spline_car_only description
     )
     loc_spline_target_lag: bpy.props.FloatProperty(
         name="Target Lag",
         default=0.3,
         precision=6,
-        description="Description To Be Added", #TODO loc_spline_car_only description
+        description="Description To Be Added", #TODO? loc_spline_car_only description
     )
     # Type 5 (ZONE) Support
     dynaload_string: bpy.props.StringProperty(

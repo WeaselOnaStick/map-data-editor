@@ -58,7 +58,7 @@ action_types = [
 ]
 AT = {x[4]: x[0] for x in action_types}
 AT_rev = {x[0]: x[4] for x in action_types}
-#TODO add support for Custom trigger actions? https://docs.donutteam.com/docs/lucasmodlauncher/hacks/custom-trigger-actions
+#TODO? add support for Custom trigger actions? https://docs.donutteam.com/docs/lucasmodlauncher/hacks/custom-trigger-actions
 
 def locator_can_have_volume(object):
     return object.locator_prop.loctype not in [LTD[2], LTD[3], LTD[8], LTD[14]]
@@ -201,7 +201,7 @@ def locator_create_cam(target_pos=Vector(), follow_player=False, FOV=70, cam_nam
 
 
 def import_locators(filepath):
-    #TODO import_locators add sort option by type?
+    #TODO? import_locators add sort option by type?
     root = terra_read(filepath)
     if 'Type' in root.attrib and root.attrib['Type'] == LOC:
         loc_list = [root]

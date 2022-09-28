@@ -13,21 +13,35 @@ def get_fence_collection(context):
         fence_collection = bpy.data.collections['Fences']
     return fence_collection
 
-def fence_create(a=Vector((0, 0, 0)), b=Vector((15, 15, 0))):
-    """Returns a curve object with single spline made of points a,b"""
-    a.z = 0
-    b.z = 0
+# def fence_create(a=Vector((0, 0, 0)), b=Vector((15, 15, 0))):
+#     """Returns a curve object with single spline made of points a,b"""
+#     a.z = 0
+#     b.z = 0
+#     fc = bpy.data.curves.new('Fence', 'CURVE')
+#     fc.dimensions = '2D'
+#     fc.extrude = 50
+#     fcs = fc.splines.new('POLY')
+#     fcs.points.add(1)
+#     fcs.points[0].co = a.to_4d()
+#     fcs.points[1].co = b.to_4d()
+#     fcs.use_endpoint_u = True
+#     fcs.use_smooth = False
+#     fco = bpy.data.objects.new('Fence', fc)
+#     fco.lock_rotation = [True,True,False] # Prevent fences from being rotated on XY axis
+#     return fco
+
+def fence_create(points):
     fc = bpy.data.curves.new('Fence', 'CURVE')
     fc.dimensions = '2D'
     fc.extrude = 50
     fcs = fc.splines.new('POLY')
-    fcs.points.add(1)
-    fcs.points[0].co = a.to_4d()
-    fcs.points[1].co = b.to_4d()
+    fcs.points.add(len(points)-1)
+    for i,p in enumerate(points):
+        fcs.points[i].co.xy = p.xy
     fcs.use_endpoint_u = True
     fcs.use_smooth = False
     fco = bpy.data.objects.new('Fence', fc)
-    fco.lock_rotation = [True,True,False] # Prevent fences from being rotated on XY axis
+    fco.lock_rotation = [True,True,False]
     return fco
 
 
@@ -47,7 +61,7 @@ def import_fences(filepath):
     root = terra_read(filepath)
     for fence in find_chunks(root, FEN):
         fence_data = list(fence)[0]
-        fences.append(fence_create(find_xyz(fence_data, 'Start'), find_xyz(fence_data, 'End')))
+        fences.append(fence_create([find_xyz(fence_data, 'Start'), find_xyz(fence_data, 'End')]))
     return fences
 
 def fence_flippable(obj : bpy.types.Object):

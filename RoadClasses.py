@@ -31,7 +31,7 @@ class RoadPropGroup(bpy.types.PropertyGroup):
         default=False,
         )
     def is_valid_intersection(self, object):
-        return is_intersection(object, bpy.context) #TODO Should we check for inter_start != inter_end? Probably not
+        return is_intersection(object, bpy.context)
     inter_start: bpy.props.PointerProperty(
         name='Start Intersection',
         type=bpy.types.Object,
@@ -203,6 +203,17 @@ class IntersectCreate(bpy.types.Operator):
 def is_intersection(object : bpy.types.Object, context):
     return object is not None and object.type == 'EMPTY' and object.empty_display_type == 'SPHERE' and object.users_collection[0] == GetIntersectionsCollection(context)
 
+class IntersectionsCreateAtFaces(bpy.types.Operator):
+    """Automatically create intersections at selected faces"""
+    bl_idname = 'object.intersect_create_at_faces'
+    bl_label = 'Create Intersections At Faces'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        #TODO IntersectionsCreateAtFaces
+        self.report({'WARNING'}, "WIP")
+        return {'FINISHED'}
+
 class RoadEditOperator:
 
     @classmethod
@@ -340,21 +351,24 @@ class RoadCreateFromSelectedQuads(bpy.types.Operator):
     def execute(self, context):
         #Not advised to refactor this inside RoadManager.py
 
-        #TODO RoadCreateFromSelectedQuads
-
-        # handle invalid input
-        if context.mode != 'OBJECT':
-            bpy.ops.object.mode_set(mode='OBJECT')
         target_obj = context.object
         target_mesh = bpy.types.Mesh(target_obj.data)
+        og_mode = str(target_obj.mode)
+        if og_mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
         polys = [x for x in target_mesh.polygons if x.select]
+        edges = [x for x in target_mesh.edges if x.select]
         active_poly = target_mesh.polygons[target_mesh.polygons.active]
+
+        # handle invalid input
         if not polys:
             self.report({'ERROR_INVALID_INPUT'}, "No faces selected")
+            bpy.ops.object.mode_set(mode = og_mode)
             return {'CANCELLED'}
 
         if not all([len(x.vertices) == 4 for x in polys]):
             self.report({'ERROR_INVALID_INPUT'}, "Non-Quad faces selected")
+            bpy.ops.object.mode_set(mode = og_mode)
             return {'CANCELLED'}
 
         if len(polys) == 1:
@@ -371,18 +385,20 @@ class RoadCreateFromSelectedQuads(bpy.types.Operator):
 
         if set(qverts_c.values()) != {1,2} or len(single_qverts) != 4:
             self.report({'ERROR_INVALID_INPUT'}, "Disconnected strip of quads selected")
+            bpy.ops.object.mode_set(mode = og_mode)
             return {'CANCELLED'}
 
         if not any([x in single_qverts for x in active_poly.vertices[:]]):
             self.report({'ERROR_INVALID_INPUT'}, "Active quad not at the start of the strip")
+            bpy.ops.object.mode_set(mode = og_mode)
             return {'CANCELLED'}
 
         road_quads = []
         
         def quad_process(road_quads, p : bpy.types.MeshPolygon, a : int, d : int, b = None, c = None):
             if b is None or c is None:
-                b = (set(get_connected_verts(a, target_mesh.edges)) & set(p.vertices[:]) - {a,d}).pop()
-                c = (set(get_connected_verts(d, target_mesh.edges)) & set(p.vertices[:]) - {a,d}).pop()
+                b = (set(get_connected_verts(a, edges)) & set(p.vertices[:]) - {a,d}).pop()
+                c = (set(get_connected_verts(d, edges)) & set(p.vertices[:]) - {a,d}).pop()
             road_quads.append(tuple([target_obj.matrix_world @ target_mesh.vertices[x].co for x in (a,b,c,d)]))
             return b,c
 
@@ -393,7 +409,7 @@ class RoadCreateFromSelectedQuads(bpy.types.Operator):
         a,d = set(single_qverts) & set(poly_s.vertices[:])
         a_co = target_mesh.vertices[a].co
         d_co = target_mesh.vertices[d].co
-        aa = (set(get_connected_verts(a, target_mesh.edges)) & set(poly_s.vertices[:]) - {a,d}).pop()
+        aa = (set(get_connected_verts(a, edges)) & set(poly_s.vertices[:]) - {a,d}).pop()
         aa_co = target_mesh.vertices[aa].co
         if ((d_co-a_co).cross(aa_co-a_co)).dot(poly_s.normal) < 0:
             a,d = d,a
@@ -422,7 +438,31 @@ class RoadCreateFromSelectedQuads(bpy.types.Operator):
         for q_co in road_quads:
             rs_create_base(road_collection,*q_co)
         
+        bpy.ops.object.mode_set(mode = og_mode)
+
         return {'FINISHED'}
+
+
+class RoadsAutoConnect(bpy.types.Operator):
+    bl_idname = "object.roads_auto_connect"
+    bl_label = "Auto-Assign Intersections"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        #TODO RoadsAutoConnect
+        self.report({'WARNING'}, "WIP")
+        return {'FINISHED'}
+
+class RoadsBatchEditProps(bpy.types.Operator):
+    bl_idname = "object.roads_batch_edit_props"
+    bl_label = "Batch Properties Edit"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        #TODO RoadsBatchEditProps
+        self.report({'WARNING'}, "WIP")
+        return {'FINISHED'}
+
 
 class RShapeAddOperator:
     """RShapeAddOperator"""
@@ -761,6 +801,7 @@ class MDE_PT_Intersections(bpy.types.Panel, RoadModule):
     def draw(self, context):
         layout = self.layout
         layout.operator(IntersectCreate.bl_idname, icon='PLUS')
+        layout.operator(IntersectionsCreateAtFaces.bl_idname, icon='FACESEL')
         if context.window_manager.intersection_names_visible:
             layout.prop(context.window_manager, "intersection_names_visible", text="Intersection Names ON", icon='HIDE_OFF')
         else:
@@ -772,7 +813,7 @@ class MDE_PT_Intersections(bpy.types.Panel, RoadModule):
 
 class MDE_PT_Roads(bpy.types.Panel, RoadModule):
     #TODO Operator to batch change properties of many at once(?)
-    bl_label = "Roads"
+    bl_label = "Road Nodes"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'WMDE Roads'
@@ -785,26 +826,42 @@ class MDE_PT_Roads(bpy.types.Panel, RoadModule):
         row.label(text="  ", icon='OPTIONS')
 
     def draw(self, context):
-        this_col = get_current_road_collection(context)
         layout = self.layout
         layout.operator(RoadCreate.bl_idname, icon='PLUS')
-        layout.operator(RoadCreateFromSelectedQuads.bl_idname, icon='EDGESEL')
-        if not get_current_road_collection(context):
+        layout.operator(RoadCreateFromSelectedQuads.bl_idname, icon='FACESEL')
+        layout.operator(RoadsAutoConnect.bl_idname, icon='SHADERFX')
+        layout.operator(RoadsBatchEditProps.bl_idname, icon='PROPERTIES')
+        
+        cur_road_col = get_current_road_collection(context)
+        if not cur_road_col:
+            layout.label(text="No Road Node Detected")
             return
-        if not this_col.road_node_prop.to_export:
-            return
+        layout.label(text=f"{cur_road_col.name} ({len(cur_road_col.objects)} Shapes)")
         layout.operator(RoadDelete.bl_idname, icon='TRASH')
         layout.operator(RoadDuplicate.bl_idname, icon='DUPLICATE')
         layout.operator(RoadCreateAdjacent.bl_idname, icon='UV_ISLANDSEL')
         layout.operator(RoadSeparate.bl_idname, icon='UNLINKED')
         box = layout.box()
-        box.label(text=f"{this_col.name} Road properties:")
+        box.label(text=f"Road properties:", icon='PROPERTIES')
         grid = box.grid_flow(row_major=False)
-        if this_col.road_node_prop.to_export:
+        if cur_road_col.road_node_prop.to_export:
             for road_prop in RoadProps:
-                grid.prop(this_col.road_node_prop, road_prop)
-        elif this_col.name not in ['Intersections', 'Master Collection']:
-            grid.prop(this_col.road_node_prop, "is_shar_road")
+                grid.prop(cur_road_col.road_node_prop, road_prop)
+                if road_prop == 'inter_end':
+                    if cur_road_col.road_node_prop.inter_start == cur_road_col.road_node_prop.inter_end:
+                        warning_box = grid.box()
+                        warning_box.label(text="Start and End Match!", icon = 'ERROR')
+                        warning_box.label(text="This causes the game to crash!")
+                    if cur_road_col.road_node_prop.inter_start is None or not is_intersection(cur_road_col.road_node_prop.inter_start, context):
+                        warning_box = grid.box()
+                        warning_box.label(text="Invalid Start Intersection!", icon = 'ERROR')
+                        warning_box.label(text="This causes the game to crash!")
+                    if cur_road_col.road_node_prop.inter_end is None or not is_intersection(cur_road_col.road_node_prop.inter_end, context):
+                        warning_box = grid.box()
+                        warning_box.label(text="Invalid End Intersection!", icon = 'ERROR')
+                        warning_box.label(text="This causes the game to crash!")
+        elif cur_road_col.name not in ['Intersections', 'Master Collection']:
+            grid.prop(cur_road_col.road_node_prop, "is_shar_road")
 
 
 class MDE_PT_RoadShapes(bpy.types.Panel, RoadModule):
@@ -822,11 +879,9 @@ class MDE_PT_RoadShapes(bpy.types.Panel, RoadModule):
 
     def draw(self, context):
         layout = self.layout
-        if not get_current_road_collection(context):
-            layout.label(text="No road collection selected")
-            return
-        if not get_current_road_collection(context).road_node_prop.to_export:
-            layout.label(text="No road collection selected")
+        cur_road_col = get_current_road_collection(context)
+        if not cur_road_col:
+            layout.label(text="No Road Node Detected")
             return
         grd = layout.grid_flow()
         grd.label(text='Editing')
@@ -855,6 +910,7 @@ to_register = [
     FileExportRoadsAndIntersects,
     FileImportRoads,
     IntersectCreate,
+    IntersectionsCreateAtFaces,
     MDE_PT_Intersections,
     MDE_PT_RoadFileManagement,
     MDE_PT_RoadShapes,
@@ -871,6 +927,8 @@ to_register = [
     RShapeUpdate,
     RoadCreate,
     RoadCreateFromSelectedQuads,
+    RoadsAutoConnect,
+    RoadsBatchEditProps,
     RoadCreateAdjacent,
     RoadDelete,
     RoadDuplicate,

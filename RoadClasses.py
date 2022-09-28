@@ -104,6 +104,7 @@ class FileExportRoadsAndIntersects(bpy.types.Operator, ExportHelper):
     #TODO Export CustomLimits.ini limits
     #TODO Export CustomRoadBehaviour xml(?)
     #TODO "Visible only" checkbox
+    #TODO safety checks (no intersections, no roads, None intersections in roads etc.)
     bl_idname = 'export_scene.roads_p3dxml'
     bl_label = 'Export Roads...'
     filename_ext = '.p3dxml'
@@ -330,6 +331,7 @@ class RoadCreateFromSelectedQuads(bpy.types.Operator):
     """Select a continuous strip of quads in any mesh and create a new road from them"""
     bl_idname = 'object.road_create_from_quads'
     bl_label = 'New Road From Selected Quads'
+    bl_options = {'UNDO'}
 
     @classmethod
     def poll(cls, context):
@@ -341,8 +343,8 @@ class RoadCreateFromSelectedQuads(bpy.types.Operator):
         #TODO RoadCreateFromSelectedQuads
 
         # handle invalid input
-        #if context.mode != 'OBJECT':
-            #bpy.ops.object.mode_set(mode='OBJECT')
+        if context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
         target_obj = context.object
         target_mesh = bpy.types.Mesh(target_obj.data)
         polys = [x for x in target_mesh.polygons if x.select]

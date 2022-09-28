@@ -343,6 +343,7 @@ class MDE_OP_volume_create_cube(bpy.types.Operator, volume_filter):
 class MDE_OP_locator_matrix_create(bpy.types.Operator):
     bl_idname = "object.loc_matrix_create"
     bl_label = "Create Locator Matrix"
+    bl_options = {'REGISTER', 'UNDO'}
 
 
     def execute(self, context):
@@ -356,6 +357,7 @@ class MDE_OP_locator_matrix_create(bpy.types.Operator):
 class MDE_OP_locator_matrix_delete(bpy.types.Operator):
     bl_idname = "object.loc_matrix_delete"
     bl_label = "Delete Locator Matrix"
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         cur_loc = get_cur_locator(context)
@@ -368,6 +370,7 @@ class MDE_OP_locator_matrix_delete(bpy.types.Operator):
 class MDE_OP_loc_spline_create(bpy.types.Operator):
     bl_idname = "object.loc_spline_create"
     bl_label = "Create Locator Spline"
+    bl_options = {'REGISTER', 'UNDO'}
 
 
     def execute(self, context):
@@ -388,6 +391,7 @@ class MDE_OP_loc_spline_create(bpy.types.Operator):
 class MDE_OP_locator_spline_delete(bpy.types.Operator):
     bl_idname = "object.loc_spline_delete"
     bl_label = "Delete Locator Spline"
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         cur_loc = get_cur_locator(context)
@@ -399,6 +403,7 @@ class MDE_OP_locator_spline_delete(bpy.types.Operator):
 class MDE_OP_loc_cam_create(bpy.types.Operator):
     bl_idname = "object.loc_cam_create"
     bl_label = "Create Static Camera"
+    bl_options = {'REGISTER', 'UNDO'}
 
 
     def execute(self, context):

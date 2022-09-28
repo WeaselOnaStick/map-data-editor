@@ -266,8 +266,7 @@ class RoadCreate(bpy.types.Operator):
     """Create new road collection"""
     bl_idname = 'object.road_create'
     bl_label = 'Create New Road Collection'
-    road_name: bpy.props.StringProperty(name='Base Road Name',
-                                        default='wzRoadNode')
+    road_name: bpy.props.StringProperty(name='Base Road Name',default='wzRoadNode')
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):

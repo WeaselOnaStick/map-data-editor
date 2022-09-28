@@ -241,7 +241,6 @@ class IntersectionsCreateAtFaces(bpy.types.Operator):
             elif self.rad_method == 'AVG':
                 r = sum([(target_mesh.vertices[x].co @ target_obj.matrix_world - poly.center @ target_obj.matrix_world).length for x in poly.vertices])/len(poly.vertices[:])
             inter_create("wzIntersection", poly.center @ target_obj.matrix_world, r, 1, GetIntersectionsCollection(context))
-        self.report({'WARNING'}, "WIP")
         bpy.ops.object.mode_set(mode = og_mode)
         return {'FINISHED'}
 
@@ -260,20 +259,7 @@ class RShapeEditOperator:
 
     @classmethod
     def poll(cls, context):
-        if not context.selected_objects:
-            return False
-        if not get_current_road_collection(context):
-            return False
-        else:
-            this_col = get_current_road_collection(context)
-            if this_col is None:
-                return False
-            return this_col.objects and this_col.road_node_prop.to_export
-        for obj in this_col.objects:
-            if obj.type != 'MESH':
-                return False
-
-        return True
+        return bool(get_current_road_collection(context))
 
 
 class RoadCreate(bpy.types.Operator):

@@ -210,14 +210,21 @@ class IntersectionsCreateAtFaces(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     rad_methods_enum = [
-        ("MAX", "Maximum", "",0),
-        ("MIN", "Minimum", "",1),
-        ("AVG", "Average", "",2)
+        ("MAX",     "Maximum",  "",0),
+        ("MIN",     "Minimum",  "",1),
+        ("AVG",     "Average",  "",2),
+        ("CONST",   "Constant", "",3)
     ]
     rad_method: bpy.props.EnumProperty(
         items=rad_methods_enum,
         name="Radius Calculation Method",
         default='MAX',
+    )
+    rad_const: bpy.props.FloatProperty(
+        name = "Constant Radius",
+        default=20,
+        min=0,
+        soft_min=0.005,
     )
 
     @classmethod
@@ -225,7 +232,6 @@ class IntersectionsCreateAtFaces(bpy.types.Operator):
         return context.object and context.object.type == 'MESH'
 
     def execute(self, context):
-        #TODO! IntersectionsCreateAtFaces
         target_obj = context.object
         og_mode = str(target_obj.mode)
         target_mesh = bpy.types.Mesh(target_obj.data)
@@ -234,15 +240,24 @@ class IntersectionsCreateAtFaces(bpy.types.Operator):
 
         for poly in target_mesh.polygons:
             if not poly.select : continue
-            if self.rad_method == 'MAX':
-                r = max([(target_mesh.vertices[x].co @ target_obj.matrix_world - poly.center @ target_obj.matrix_world).length for x in poly.vertices])
-            elif self.rad_method == 'MIN':
-                r = min([(target_mesh.vertices[x].co @ target_obj.matrix_world - poly.center @ target_obj.matrix_world).length for x in poly.vertices])
-            elif self.rad_method == 'AVG':
-                r = sum([(target_mesh.vertices[x].co @ target_obj.matrix_world - poly.center @ target_obj.matrix_world).length for x in poly.vertices])/len(poly.vertices[:])
-            inter_create("wzIntersection", poly.center @ target_obj.matrix_world, r, 1, GetIntersectionsCollection(context))
+            if      self.rad_method == 'MAX':
+                r = max([(target_obj.matrix_world @ target_mesh.vertices[x].co - target_obj.matrix_world @ poly.center).length for x in poly.vertices])
+            elif    self.rad_method == 'MIN':
+                r = min([(target_obj.matrix_world @ target_mesh.vertices[x].co - target_obj.matrix_world @ poly.center).length for x in poly.vertices])
+            elif    self.rad_method == 'AVG':
+                r = sum([(target_obj.matrix_world @ target_mesh.vertices[x].co - target_obj.matrix_world @ poly.center).length for x in poly.vertices])/len(poly.vertices[:])
+            elif    self.rad_method == 'CONST':
+                r = self.rad_const
+            inter_create("wzIntersection", target_obj.matrix_world @ poly.center, r, 1, GetIntersectionsCollection(context))
         bpy.ops.object.mode_set(mode = og_mode)
         return {'FINISHED'}
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column()
+        col.prop(self, "rad_method")
+        if self.rad_method == 'CONST':
+            col.prop(self, "rad_const")
 
 class RoadEditOperator:
 
@@ -460,24 +475,147 @@ class RoadCreateFromSelectedQuads(bpy.types.Operator):
 
 
 class RoadsAutoConnect(bpy.types.Operator):
+    """Automatically select the closest intersections to the road's first and last shape.\nMake sure vertices overlap and road node collection only has valid road shapes!"""
     bl_idname = "object.roads_auto_connect"
     bl_label = "Auto-Assign Intersections"
     bl_options = {'REGISTER', 'UNDO'}
 
+    target_filters_enum = [
+        ("ALL", "All", "Affect all road nodes in master collection", 0),
+        ("ACTIVE", "Only Active Node", "Affect only currently active node indicated on the side bar", 1),
+        ("VISIBLE", "Only Visible Nodes", "Affect all road nodes in master collection that aren't hidden", 2),
+        ("SELECT", "Nodes With Selected Shapes", "Affect road nodes if any of their road shapes are selected", 3),
+    ]
+    target_filter : bpy.props.EnumProperty(
+        name = "Roads To Connect",
+        items = target_filters_enum,
+        #default='ALL',
+        default='ACTIVE',
+    )
+    error_margin : bpy.props.FloatProperty(
+        name='Error Margin',
+        description='Error margin for checking if road shapes are connected',
+        min=0,
+        soft_min=0.0001,
+        default=0.05
+    )
+
     def execute(self, context):
-        #TODO! RoadsAutoConnect
-        self.report({'WARNING'}, "WIP")
+
+        inters_dict = {inter : inter.location for inter in GetIntersectionsCollection(context).objects}
+        
+        if self.target_filter == 'ALL':
+            target_roads = RoadManager.GetRoadsCollection(context).children
+        elif self.target_filter == 'ACTIVE':
+            target_roads = [get_current_road_collection(context)]
+        elif self.target_filter == 'VISIBLE':
+            target_roads = [x for x in RoadManager.GetRoadsCollection(context).children if not (context.view_layer.layer_collection.children['Road Nodes'].children[x.name].hide_viewport or x.hide_viewport)]
+        elif self.target_filter == 'SELECT':
+            target_roads = [x for x in RoadManager.GetRoadsCollection(context).children if any([y.select_get() for y in x.objects])]
+
+        for road in target_roads:
+            start_shape, end_shape = None, None
+
+            # get first and last road shapes
+                # count each A and B vert (in world coordinates)
+                # first road shape is shape with A that only appears once
+                # last  road shape is shape with B that only appears once
+
+            for rshape in road.objects:
+                a_stick, b_stick = False, False # A or B has "sticky" overlapping verts other than themselves
+                a = rshape.matrix_world @ rshape.data.vertices[0].co
+                b = rshape.matrix_world @ rshape.data.vertices[2].co
+
+                for other_rshape in road.objects:
+                    if rshape == other_rshape: continue
+
+                    ao = other_rshape.matrix_world @ other_rshape.data.vertices[0].co
+                    bo = other_rshape.matrix_world @ other_rshape.data.vertices[2].co
+
+                    if (bo-a).length < self.error_margin:
+                        a_stick = True
+                    if (ao-b).length < self.error_margin:
+                        b_stick = True
+                    
+                    #rshape is definitely in the middle
+                    if (a_stick, b_stick) == (True, True):
+                        break
+                        
+                if      (a_stick, b_stick) == (True, True):
+                    continue
+                elif    (a_stick, b_stick) == (True, False):
+                    end_shape = rshape
+                elif    (a_stick, b_stick) == (False, True):
+                    start_shape = rshape
+
+                
+
+            
+            if start_shape is None or end_shape is None:
+                self.report({'ERROR'}, "Something went wrong. Make sure road shapes have been updated and margin isn't too small")
+                return {'CANCELLED'}
+
+            start_co = (start_shape.matrix_world    @ start_shape.data.vertices[0].co   + start_shape.matrix_world  @ start_shape.data.vertices[6].co)/2
+            end_co   = (end_shape.matrix_world      @ end_shape.data.vertices[0].co     + end_shape.matrix_world    @ end_shape.data.vertices[6].co)/2
+
+            #print('-------------DEBUG------------')
+            #print(start_co.xyz)
+            #print(end_co.xyz)
+            # assign inter closest to first road shape as start
+            # assign inter closest to last road shape as end
+
+
+            
+            road.road_node_prop.inter_start = sorted(inters_dict.items(), key= lambda x: (x[1]-start_co).length)[0][0]
+            road.road_node_prop.inter_end = sorted(inters_dict.items(), key= lambda x: (x[1]-end_co).length)[0][0]
+
+        #self.report({'WARNING'}, "WIP")
         return {'FINISHED'}
 
-class RoadsBatchEditProps(bpy.types.Operator):
-    bl_idname = "object.roads_batch_edit_props"
-    bl_label = "Batch Properties Edit"
-    bl_options = {'REGISTER', 'UNDO'}
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+    
+    def draw(self, context):
+        layout = self.layout
+        col = layout.grid_flow()
+        r = col.row()
+        r.label(text='Roads To Connect: ')
+        r = col.row()
+        r.prop(self, 'target_filter', text='')
+        if self.target_filter == 'ALL':
+            n = len(RoadManager.GetRoadsCollection(context).children)
+        elif self.target_filter == 'ACTIVE':
+            n = 1
+        elif self.target_filter == 'VISIBLE':
+            n = len([x for x in RoadManager.GetRoadsCollection(context).children if not (context.view_layer.layer_collection.children['Road Nodes'].children[x.name].hide_viewport or x.hide_viewport)])
+        elif self.target_filter == 'SELECT':
+            n = len([x for x in RoadManager.GetRoadsCollection(context).children if any([y.select_get() for y in x.objects])])
+        col.prop(self, "error_margin")
+        col.label(text=f"(This will affect {n} road node{'s' if n != 1 else ''})")
 
-    def execute(self, context):
-        #TODO! RoadsBatchEditProps
-        self.report({'WARNING'}, "WIP")
-        return {'FINISHED'}
+#CANCELLED 
+
+# class RoadsBatchEditProps(bpy.types.Operator):
+#     bl_idname = "object.roads_batch_edit_props"
+#     bl_label = "Batch Properties Edit"
+#     bl_options = {'REGISTER', 'UNDO'}
+
+#     new_road_props = bpy.props.PointerProperty(type=RoadPropGroup)
+
+#     def execute(self, context):
+#         self.report({'WARNING'}, "WIP")
+#         return {'FINISHED'}
+
+#     def invoke(self, context, event):
+#         wm = context.window_manager
+#         return wm.invoke_props_dialog(self)
+
+#     def draw(self, context):
+#         layout = self.layout
+#         col = layout.column()
+#         col.label(text='LOLOLOLOLOL')
+#         col.prop(self, "new_road_props")
 
 
 class RShapeAddOperator:
@@ -845,7 +983,6 @@ class MDE_PT_Roads(bpy.types.Panel, RoadModule):
         layout.operator(RoadCreate.bl_idname, icon='PLUS')
         layout.operator(RoadCreateFromSelectedQuads.bl_idname, icon='FACESEL')
         layout.operator(RoadsAutoConnect.bl_idname, icon='SHADERFX')
-        layout.operator(RoadsBatchEditProps.bl_idname, icon='PROPERTIES')
         
         cur_road_col = get_current_road_collection(context)
         if not cur_road_col:
@@ -947,7 +1084,6 @@ to_register = [
     RoadCreate,
     RoadCreateFromSelectedQuads,
     RoadsAutoConnect,
-    RoadsBatchEditProps,
     RoadCreateAdjacent,
     RoadDelete,
     RoadDuplicate,

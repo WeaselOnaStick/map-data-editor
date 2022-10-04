@@ -39,13 +39,16 @@ class FileExportPaths(bpy.types.Operator, ExportHelper):
     bl_idname = 'export_scene.paths_p3dxml'
     bl_label = 'Export Paths...'
     filename_ext = '.p3dxml'
-    filter_glob: bpy.props.StringProperty(default='*.p3dxml',
-                                          options={
-                                              'HIDDEN'},
-                                          maxlen=255)
-    selected_only: bpy.props.BoolProperty(name='Selected Only',
-                                          description='Only export selected path objects',
-                                          default=False)
+    filter_glob: bpy.props.StringProperty(
+        default='*.p3dxml',
+        options={'HIDDEN'},
+        maxlen=255
+        )
+    selected_only: bpy.props.BoolProperty(
+        name='Selected Only',
+        description='Only export selected path objects',
+        default=False
+        )
 
     def execute(self, context):
         result = None
@@ -64,7 +67,6 @@ class FileExportPaths(bpy.types.Operator, ExportHelper):
         for path_obj in objs:
             if len(path_obj.data.splines[0].points) > 32:
                 invalid_objs.append(path_obj)
-
 
         valid_objs = [x for x in objs if not x in invalid_objs]
                 
@@ -88,13 +90,43 @@ class FileExportPaths(bpy.types.Operator, ExportHelper):
 
 
 class PathCreateBasic(bpy.types.Operator):
-    bl_idname = 'object.path_create_basic'
+    bl_idname = 'object.path_create'
     bl_label = 'Create Basic Path'
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        path_create_basic(cursor=context.scene.cursor)
+        bpy.ops.object.select_all(action='DESELECT')
+        cursor_loc = context.scene.cursor.location.copy()
+        path_object = path_create([cursor_loc - Vector((5, 0, 0)),cursor_loc + Vector((5, 0, 0))])
         bpy.ops.object.mode_set(mode='EDIT')
+        path_object.select_set(True)
+        bpy.context.view_layer.objects.active = path_object
+        return {'FINISHED'}
+
+class PathCreateFromSelectedEdges(bpy.types.Operator):
+    bl_idname = 'object.path_create_from_edges'
+    bl_label = 'Create From Selected Edges'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.object and context.object.type == 'MESH'
+
+    def execute(self, context):        
+        target_obj = context.object
+        target_mesh = bpy.types.Mesh(target_obj.data)
+        og_mode = str(target_obj.mode)
+        if og_mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+
+        for edge in target_mesh.edges:
+            if not edge.select: continue
+            path_obj = path_create([target_obj.matrix_world @ target_mesh.vertices[edge.vertices[x]].co for x in [0,1]])
+            path_obj.select_set(True)
+
+        bpy.ops.object.mode_set(mode = og_mode)
+        target_obj.select_set(False)
         return {'FINISHED'}
 
 
@@ -159,8 +191,8 @@ class MDE_PT_PathFileManagement(bpy.types.Panel, PathModule):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator('import_scene.paths_p3dxml', icon='IMPORT')
-        layout.operator('export_scene.paths_p3dxml', icon='EXPORT')
+        layout.operator(FileImportPaths.bl_idname, icon='IMPORT')
+        layout.operator(FileExportPaths.bl_idname, icon='EXPORT')
 
 
 class MDE_PT_Paths(bpy.types.Panel, PathModule):
@@ -178,7 +210,20 @@ class MDE_PT_Paths(bpy.types.Panel, PathModule):
     def draw(self, context):
         layout = self.layout
         layout.operator((PathCreateBasic.bl_idname), icon='CURVE_PATH')
-        layout.operator((PathCreateCircular.bl_idname), icon='LIGHT_POINT')
+        layout.operator((PathCreateFromSelectedEdges.bl_idname), icon='EDGESEL')
+        layout.operator((PathCreateCircular.bl_idname), icon='ANTIALIASED')
+        cur_obj = context.object
+        if cur_obj and cur_obj.type =='CURVE':
+            if len(cur_obj.data.splines) != 1:
+                box = layout.box()
+                box.label(text=f"{cur_obj.name} has incorrect number of splines ({len(cur_obj.data.splines)})",icon='ERROR')
+                box.label(text="(Should be 1)")
+                return
+            if len(cur_obj.data.splines[0].points) > 32:
+                box = layout.box()
+                box.label(text=f"{cur_obj.name} has incorrect number of points ({len(cur_obj.data.splines[0].points)})",icon='ERROR')
+                box.label(text="(Can't be more than 32)")
+                return
 
 to_register = [
     FileExportPaths,
@@ -186,5 +231,6 @@ to_register = [
     MDE_PT_PathFileManagement,
     MDE_PT_Paths,
     PathCreateBasic,
+    PathCreateFromSelectedEdges,
     PathCreateCircular,
     ]

@@ -58,22 +58,19 @@ def export_paths(filepath, objs):
     write_ET(root, filepath)
     return counter
 
-
-def path_create_basic(cursor):
-    bpy.ops.object.select_all(action='DESELECT')
+def path_create(points, name="Path") -> bpy.types.Object:
     paths_collection = get_paths_collection()
-    path_curve = bpy.data.curves.new(name='Path', type='CURVE')
+    path_curve = bpy.data.curves.new(name=name, type='CURVE')
     path_curve.dimensions = '3D'
     path_spline = path_curve.splines.new(type='POLY')
-    path_spline.points.add(1)
-    path_spline.points[0].co = (cursor.location.copy() - Vector((5, 0, 0))).to_4d()
-    path_spline.points[1].co = (cursor.location.copy() + Vector((5, 0, 0))).to_4d()
-    path_object = bpy.data.objects.new('Path', path_curve)
+    path_spline.points.add(len(points)-1)
+    for i,p in enumerate(points):
+        path_spline.points[i].co = (p).to_4d()
+    path_object = bpy.data.objects.new(name, path_curve)
     paths_collection.objects.link(path_object)
-    path_object.select_set(True)
-    bpy.context.view_layer.objects.active = path_object
     path_object.show_wire = True
     path_object.show_in_front = True
+    return path_object
 
 
 def path_create_circular(cursor, kwargs):

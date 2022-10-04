@@ -594,7 +594,7 @@ class RoadsAutoConnect(bpy.types.Operator):
         col.prop(self, "error_margin")
         col.label(text=f"(This will affect {n} road node{'s' if n != 1 else ''})")
 
-#CANCELLED 
+#CANCELLED (??)
 
 # class RoadsBatchEditProps(bpy.types.Operator):
 #     bl_idname = "object.roads_batch_edit_props"

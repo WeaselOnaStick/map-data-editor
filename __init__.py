@@ -11,7 +11,7 @@ from . import InstanceClasses
 
 bl_info = {'name': "WMDE - Weasel's Map Data Editor",
            'author': 'Weasel On A Stick',
-           'version': (2, 3, 1),
+           'version': (2, 4, 1),
            'blender': (2, 93),
            'location': 'View3D > Sidebar > WMDE',
            'description': 'Edit SHAR map data, including: roads, paths, fences, locators, k-d Tree and other stuff',
@@ -24,19 +24,24 @@ class WMDE_Preferences(bpy.types.AddonPreferences):
     bl_idname = __name__
     RoadsEnabled: bpy.props.BoolProperty(
         name='Enable Roads Module',
-        default=True)
+        default=True,
+    )
     PathsEnabled: bpy.props.BoolProperty(
         name='Enable Paths Module',
-        default=True)
+        default=True
+    )
     FencesEnabled: bpy.props.BoolProperty(
         name='Enable Fences Module', 
-        default=True)
+        default=True
+    )
     LocatorsEnabled: bpy.props.BoolProperty(
         name='Enable Locators Module', 
-        default=True)
+        default=True
+    )
     MiscEnabled: bpy.props.BoolProperty(
         name='Enable Misc Module', 
-        default=True)
+        default=True
+    )
     
 
     def draw(self, context):

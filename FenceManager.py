@@ -30,7 +30,7 @@ def get_fence_collection(context):
 #     fco.lock_rotation = [True,True,False] # Prevent fences from being rotated on XY axis
 #     return fco
 
-def fence_create(points):
+def fence_create(points, context = bpy.context):
     fc = bpy.data.curves.new('Fence', 'CURVE')
     fc.dimensions = '2D'
     fc.extrude = 50
@@ -42,6 +42,7 @@ def fence_create(points):
     fcs.use_smooth = False
     fco = bpy.data.objects.new('Fence', fc)
     fco.lock_rotation = [True,True,False]
+    get_fence_collection(context).objects.link(fco)
     return fco
 
 

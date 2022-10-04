@@ -61,21 +61,36 @@ class FenceCreate(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        fence_obj = fence_create([context.scene.cursor.location, context.scene.cursor.location + Vector((10,30,0))])
-        get_fence_collection(context).objects.link(fence_obj)
+        fence_obj = fence_create([context.scene.cursor.location, context.scene.cursor.location + Vector((10,30,0))], context)
         fence_obj.select_set(True)
         context.view_layer.objects.active = fence_obj
         bpy.ops.object.mode_set(mode='EDIT')
         return {'FINISHED'}
 
 class FenceCreateFromSelectedEdges(bpy.types.Operator):
-    #TODO FenceCreateFromSelectedEdges operator
     bl_idname = 'object.fence_create_from_edges'
     bl_label = 'Create Fence From Selected Edges'
     bl_options = {'REGISTER', 'UNDO'}
 
-    def execute(self, context):
-        self.report({'WARNING'}, "WIP")
+    @classmethod
+    def poll(cls, context):
+        return context.object and context.object.type == 'MESH'
+
+    def execute(self, context):        
+        target_obj = context.object
+        target_mesh = bpy.types.Mesh(target_obj.data)
+        og_mode = str(target_obj.mode)
+        if og_mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+
+        for edge in target_mesh.edges:
+            if not edge.select: continue
+            fence_obj = fence_create([target_obj.matrix_world @ target_mesh.vertices[edge.vertices[x]].co for x in [0,1]], context)
+            fence_obj.select_set(True)
+
+        bpy.ops.object.mode_set(mode = og_mode)
+        target_obj.select_set(False)
         return {'FINISHED'}
 
 class FenceFlip(bpy.types.Operator):

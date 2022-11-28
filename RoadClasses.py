@@ -516,11 +516,28 @@ class RoadsAutoConnect(bpy.types.Operator):
         for road in target_roads:
             start_shape, end_shape = None, None
 
+            # Edge case: road only has 1 road shape
+            if len(road.objects) == 1:
+                start_shape, end_shape = road.objects[0], road.objects[0]
+                
+                start_co = (start_shape.matrix_world    @ start_shape.data.vertices[0].co   + start_shape.matrix_world  @ start_shape.data.vertices[6].co)/2
+                end_co   = (end_shape.matrix_world      @ end_shape.data.vertices[2].co     + end_shape.matrix_world    @ end_shape.data.vertices[4].co)/2
+
+                #print('-------------DEBUG------------')
+                #print(start_co.xyz)
+                #print(end_co.xyz)
+                # assign inter closest to first road shape as start
+                # assign inter closest to last road shape as end
+                
+                road.road_node_prop.inter_start = sorted(inters_dict.items(), key= lambda x: (x[1]-start_co).length)[0][0]
+                road.road_node_prop.inter_end = sorted(inters_dict.items(), key= lambda x: (x[1]-end_co).length)[0][0]
+                continue
+            
+
             # get first and last road shapes
                 # count each A and B vert (in world coordinates)
                 # first road shape is shape with A that only appears once
                 # last  road shape is shape with B that only appears once
-
             for rshape in road.objects:
                 a_stick, b_stick = False, False # A or B has "sticky" overlapping verts other than themselves
                 a = rshape.matrix_world @ rshape.data.vertices[0].co
@@ -552,8 +569,10 @@ class RoadsAutoConnect(bpy.types.Operator):
 
             
             if start_shape is None or end_shape is None:
-                self.report({'ERROR'}, "Something went wrong. Make sure road shapes have been updated and margin isn't too small")
-                return {'CANCELLED'}
+                self.report({'ERROR'}, "Some road nodes have been skipped due to error. Check console for details")
+                print(f"Failed to find start/end intersections for {road.name}")
+                continue
+                #return {'CANCELLED'}
 
             start_co = (start_shape.matrix_world    @ start_shape.data.vertices[0].co   + start_shape.matrix_world  @ start_shape.data.vertices[6].co)/2
             end_co   = (end_shape.matrix_world      @ end_shape.data.vertices[0].co     + end_shape.matrix_world    @ end_shape.data.vertices[6].co)/2
@@ -563,8 +582,6 @@ class RoadsAutoConnect(bpy.types.Operator):
             #print(end_co.xyz)
             # assign inter closest to first road shape as start
             # assign inter closest to last road shape as end
-
-
             
             road.road_node_prop.inter_start = sorted(inters_dict.items(), key= lambda x: (x[1]-start_co).length)[0][0]
             road.road_node_prop.inter_end = sorted(inters_dict.items(), key= lambda x: (x[1]-end_co).length)[0][0]

@@ -201,15 +201,16 @@ def rs_edit_subdiv(shape_obj : bpy.types.Object, number_cuts):
     col = shape_obj.users_collection[0]
     mw = shape_obj.matrix_world
     old_vert_pos = [mw @ shape_obj.data.vertices[i].co.copy() for i in [0,2,4,6]]
-    delta = (old_vert_pos[1] - old_vert_pos[0])/(number_cuts)
+    delta_l = (old_vert_pos[1] - old_vert_pos[0])/(number_cuts)
+    delta_r = (old_vert_pos[2] - old_vert_pos[3])/(number_cuts)
     for i in range(number_cuts):
         new_shapes.append(
             rs_create_base(
                 col, 
-                old_vert_pos[0]+delta*i, 
-                old_vert_pos[0]+delta*(i+1), 
-                old_vert_pos[3]+delta*(i+1), 
-                old_vert_pos[3]+delta*i,
+                old_vert_pos[0]+delta_l*i, 
+                old_vert_pos[0]+delta_l*(i+1), 
+                old_vert_pos[3]+delta_r*(i+1), 
+                old_vert_pos[3]+delta_r*i,
                 )
         )
     return new_shapes

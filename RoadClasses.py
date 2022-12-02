@@ -201,7 +201,7 @@ class IntersectCreate(bpy.types.Operator):
         return {'FINISHED'}
 
 def is_intersection(object : bpy.types.Object, context):
-    return object is not None and object.type == 'EMPTY' and object.empty_display_type == 'SPHERE' and object.users_collection[0] == GetIntersectionsCollection(context)
+    return object is not None and object.type == 'EMPTY' and object.empty_display_type == 'SPHERE' and object.users_collection and object.users_collection[0] == GetIntersectionsCollection(context)
 
 class IntersectionsCreateAtFaces(bpy.types.Operator):
     """Automatically create intersections at selected faces"""

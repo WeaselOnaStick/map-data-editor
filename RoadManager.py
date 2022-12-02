@@ -195,6 +195,24 @@ def rs_edit_flip(shape_obj):
     shape_obj.data.update()
     rs_edit_upd(shape_obj)
 
+def rs_edit_subdiv(shape_obj : bpy.types.Object, number_cuts):
+    new_shapes = []
+    rs_edit_upd(shape_obj)
+    col = shape_obj.users_collection[0]
+    mw = shape_obj.matrix_world
+    old_vert_pos = [mw @ shape_obj.data.vertices[i].co.copy() for i in [0,2,4,6]]
+    delta = (old_vert_pos[1] - old_vert_pos[0])/(number_cuts)
+    for i in range(number_cuts):
+        new_shapes.append(
+            rs_create_base(
+                col, 
+                old_vert_pos[0]+delta*i, 
+                old_vert_pos[0]+delta*(i+1), 
+                old_vert_pos[3]+delta*(i+1), 
+                old_vert_pos[3]+delta*i,
+                )
+        )
+    return new_shapes
 
 def rs_edit_shift_adjacent(shape_obj, direction=False):
     rs_edit_upd(shape_obj)
@@ -290,8 +308,8 @@ def invalid_roads(road_cols, inter_objs, margin):
     check = roads_are_disconnected(road_cols, inter_objs)
     if check:
         return check
-    print("\tChecking connection validity")
-    check = roads_improperly_connected(road_cols, margin)
+    #print("\tChecking connection validity")
+    #check = roads_improperly_connected(road_cols, margin)
     if check:
         return check
     return False
@@ -326,6 +344,7 @@ def roads_have_invalid_intersections(road_cols):
 
 
 def roads_improperly_connected(road_cols, margin=1.5):
+    #TODO fix this shitty validity checker
     faulty_nodes = {}
     for node in road_cols:
         all_verts = []

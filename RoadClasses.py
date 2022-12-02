@@ -575,7 +575,7 @@ class RoadsAutoConnect(bpy.types.Operator):
                 #return {'CANCELLED'}
 
             start_co = (start_shape.matrix_world    @ start_shape.data.vertices[0].co   + start_shape.matrix_world  @ start_shape.data.vertices[6].co)/2
-            end_co   = (end_shape.matrix_world      @ end_shape.data.vertices[0].co     + end_shape.matrix_world    @ end_shape.data.vertices[6].co)/2
+            end_co   = (end_shape.matrix_world      @ end_shape.data.vertices[2].co     + end_shape.matrix_world    @ end_shape.data.vertices[4].co)/2
 
             #print('-------------DEBUG------------')
             #print(start_co.xyz)
@@ -905,6 +905,20 @@ class RShapeAdjustWidth(bpy.types.Operator, RShapeEditOperator):
         self.distance = (v[(-1)].co - v[0].co).length * 2
         return self.execute(context)
 
+class RShapeSubdiv(bpy.types.Operator, RShapeEditOperator):
+    bl_idname = 'object.road_shape_subdiv'
+    bl_label = 'Subdivide'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    number_cuts: bpy.props.IntProperty(name='Number of Cuts', default=1, min=1, soft_max=24)
+
+    def execute(self, context):
+        for shape_obj in context.selected_objects:
+            for new_rs in RoadManager.rs_edit_subdiv(shape_obj, self.number_cuts+1):
+                new_rs.select_set(True)
+            bpy.data.objects.remove(shape_obj)
+        return {'FINISHED'}
+    pass
 
 class RShapeFlip(bpy.types.Operator, RShapeEditOperator):
     """RShapeFlip"""
@@ -1064,6 +1078,7 @@ class MDE_PT_RoadShapes(bpy.types.Panel, RoadModule):
         grd.operator(RShapeFlip.bl_idname, icon='UV_SYNC_SELECT')
         grd.operator(RShapeShift.bl_idname, icon='PAUSE')
         grd.operator(RShapeShiftAdjacent.bl_idname, icon='FRAME_NEXT')
+        grd.operator(RShapeSubdiv.bl_idname, icon='SNAP_INCREMENT')
         grd = layout.grid_flow()
         grd.label(text='Creating')
         grd.operator(RShapeCreateStraight.bl_idname, icon_value=(pcoll['RSHAPE_SINGLE'].icon_id))
@@ -1092,6 +1107,7 @@ to_register = [
     RShapeCreateElliptic,
     RShapeCreateStraight,
     RShapeFinalizeCurve,
+    RShapeSubdiv,
     RShapeFlip,
     RShapePrepareCurve,
     RShapeSelect,

@@ -49,7 +49,7 @@ class FileExportFences(bpy.types.Operator, ExportHelper):
                 self.report({'ERROR'}, 'No "Fences" collection found')
                 return {'CANCELLED'}
             
-            objs = get_all_objects_in_collection(fences_collection)
+            objs = fences_collection.all_object
         result = export_fences(self.filepath, objs)
         if result:
             self.report({'INFO'}, f"Successfully exported {len(objs)} fences")

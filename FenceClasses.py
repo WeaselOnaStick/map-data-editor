@@ -43,10 +43,13 @@ class FileExportFences(bpy.types.Operator, ExportHelper):
                 self.report({'ERROR_INVALID_INPUT'}, 'No Fences selected!')
                 return {'CANCELLED'}
         else:
-            if 'Fences' not in bpy.data.collections:
+            fences_collection = bpy.data.collections.get('Fences')
+			
+            if not fences_collection:
                 self.report({'ERROR'}, 'No "Fences" collection found')
                 return {'CANCELLED'}
-            objs = bpy.data.collections['Fences'].objects
+            
+            objs = fences_collection.all_objects
         result = export_fences(self.filepath, objs)
         if result:
             self.report({'INFO'}, f"Successfully exported {len(objs)} fences")
